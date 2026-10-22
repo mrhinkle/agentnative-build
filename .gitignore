@@ -1,0 +1,10 @@
+node_modules
+dist
+dist-server
+_prototype
+.claude
+.vercel
+
+.vercel
+.DS_Store
+*.log

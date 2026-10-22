@@ -1,0 +1,88 @@
+/**
+ * /api/mcp — read-only remote MCP server for agentnative.build (Streamable HTTP, JSON responses).
+ * Stateless: every request is self-contained, no session id, no handshake required before tools/call.
+ * Tools are the same definitions the page registers through WebMCP (src/lib/tools.ts).
+ */
+import { TOOLS, toolResult, errorResult } from "../src/lib/tools";
+import { SITE } from "../src/lib/data";
+
+const SUPPORTED = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
+const MAX_BODY = 64 * 1024;
+const CORS = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-methods": "GET, POST, OPTIONS",
+  "access-control-allow-headers": "content-type, accept, mcp-protocol-version, mcp-session-id",
+};
+
+const reply = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", "cache-control": "no-store", ...CORS } });
+
+const ok = (id: unknown, result: unknown) => ({ jsonrpc: "2.0", id, result });
+const fail = (id: unknown, code: number, message: string, data?: unknown) => ({ jsonrpc: "2.0", id: id ?? null, error: { code, message, ...(data ? { data } : {}) } });
+
+function handle(msg: any): unknown | null {
+  if (!msg || msg.jsonrpc !== "2.0" || typeof msg.method !== "string") return fail(msg?.id, -32600, "Invalid Request");
+  const { id, method, params } = msg;
+  const isNotification = id === undefined;
+
+  switch (method) {
+    case "initialize": {
+      const asked = params?.protocolVersion;
+      return ok(id, {
+        protocolVersion: SUPPORTED.includes(asked) ? asked : SUPPORTED[0],
+        capabilities: { tools: { listChanged: false } },
+        serverInfo: { name: "agentnative-build", title: SITE.name, version: "1.0.0" },
+        instructions: "Read-only tools about agent-native software. Use score_product to rate a product, search_site to find passages, get_page for full Markdown.",
+      });
+    }
+    case "ping": return ok(id, {});
+    case "tools/list":
+      return ok(id, { tools: TOOLS.map((t) => ({ name: t.name, title: t.title, description: t.description, inputSchema: t.inputSchema, annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false } })) });
+    case "tools/call": {
+      const tool = TOOLS.find((t) => t.name === params?.name);
+      if (!tool) return fail(id, -32602, `Unknown tool: ${params?.name}`, { fix: "Call tools/list and use one of the returned names.", retryable: false });
+      try { return ok(id, toolResult(tool, params?.arguments)); }
+      catch (e) { return ok(id, errorResult(e)); }
+    }
+    default:
+      return isNotification ? null : fail(id, -32601, `Method not found: ${method}`, { fix: "Supported methods: initialize, ping, tools/list, tools/call.", retryable: false });
+  }
+}
+
+async function post(request: Request) {
+  const raw = await request.text();
+  if (raw.length > MAX_BODY) return reply(fail(null, -32600, "Request too large"), 413);
+  let body: unknown;
+  try { body = JSON.parse(raw); } catch { return reply(fail(null, -32700, "Parse error"), 400); }
+
+  if (Array.isArray(body)) {
+    const out = body.map(handle).filter((r) => r !== null);
+    return out.length ? reply(out) : new Response(null, { status: 202, headers: CORS });
+  }
+  const out = handle(body);
+  return out === null ? new Response(null, { status: 202, headers: CORS }) : reply(out);
+}
+
+function get() {
+  return reply({
+    name: "agentnative-build",
+    description: "Read-only MCP server for agentnative.build. POST JSON-RPC 2.0 to this URL.",
+    docs: SITE.url + "/agents",
+    tools: TOOLS.map((t) => t.name),
+  });
+}
+
+function options() {
+  return new Response(null, { status: 204, headers: CORS });
+}
+
+export default {
+  async fetch(request: Request) {
+    switch (request.method) {
+      case "POST": return post(request);
+      case "GET": return get();
+      case "OPTIONS": return options();
+      default: return reply(fail(null, -32600, "Method not allowed"), 405);
+    }
+  },
+};
