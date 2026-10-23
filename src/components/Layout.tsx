@@ -39,6 +39,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
+      if (e.key === "Escape") setMenu(false);
       if (e.key === "a" && !e.metaKey && !e.ctrlKey && !e.altKey && !t.closest("button, a, input, textarea, select, summary, label, pre, [contenteditable]")) toggle(!agent);
     };
     window.addEventListener("keydown", onKey);
@@ -61,24 +62,24 @@ export default function Layout({ children }: { children: ReactNode }) {
           <Link to="/" className="inline-flex shrink-0 items-center whitespace-nowrap font-mono text-sm font-bold tracking-tight text-white" aria-label="Agent Native home">
             <span>agent</span><span className="text-[#f44800]">/</span><span>native</span><span className="caret !h-3.5 !w-1.5 ml-1 shrink-0 !align-baseline" aria-hidden="true" />
           </Link>
-          <nav className="hidden md:flex items-center gap-7" aria-label="Main">
-            {NAV_ITEMS.map((n) => (
-              <Link key={n.href} to={n.href} aria-current={!n.href.includes("#") && pathname === n.href ? "page" : undefined} className={`text-sm font-medium transition-colors ${!n.href.includes("#") && pathname === n.href ? "text-white" : "text-white/60 hover:text-white"}`}>{n.label}</Link>
-            ))}
-          </nav>
           <div className="flex items-center gap-3">
             <div className="flex items-center rounded-md border border-white/10 p-0.5 text-xs font-semibold" role="group" aria-label="Choose reader">
               <button aria-pressed={!agent} onClick={() => toggle(false)} className={`rounded px-3 py-1.5 transition-colors ${!agent ? "bg-white/10 text-white" : "text-white/50 hover:text-white"}`}>Human</button>
               <button aria-pressed={agent} onClick={() => toggle(true)} className={`rounded px-3 py-1.5 transition-colors ${agent ? "bg-emerald-400/20 text-emerald-300" : "text-white/50 hover:text-white"}`}>Agent</button>
             </div>
-            <Link to="/#score" className="hidden sm:inline-flex rounded bg-[#2563EB] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2563EB]/90 transition-colors">Take the scorecard</Link>
-            <button className="lg:hidden p-2 text-white/70" aria-label={menu ? "Close menu" : "Open menu"} onClick={() => setMenu(!menu)}>{menu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}</button>
+            <button className="p-2 text-white/70 hover:text-white transition-colors" aria-label={menu ? "Close menu" : "Open menu"} aria-expanded={menu} aria-controls="site-menu" onClick={() => setMenu(!menu)}>{menu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}</button>
           </div>
         </div>
         {menu && (
-          <nav className="lg:hidden border-t border-white/5 bg-[#0A0F1C] px-4 py-3" aria-label="Mobile">
-            {NAV_ITEMS.map((n) => <Link key={n.href} to={n.href} className="block py-2.5 text-sm font-medium text-white/70 hover:text-white">{n.label}</Link>)}
-          </nav>
+          <div className="container flex justify-end">
+            <nav id="site-menu" className="w-full sm:w-72 rounded-b-md border border-t-0 border-white/10 bg-[#0A0F1C] px-4 py-3 shadow-2xl" aria-label="Main">
+              {NAV_ITEMS.map((n) => {
+                const here = !n.href.includes("#") && pathname === n.href;
+                return <Link key={n.href} to={n.href} aria-current={here ? "page" : undefined} className={`block py-2.5 text-sm font-medium transition-colors ${here ? "text-white" : "text-white/70 hover:text-white"}`}>{n.label}</Link>;
+              })}
+              <Link to="/#score" className="mt-3 block rounded bg-[#2563EB] px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-[#2563EB]/90 transition-colors">Take the scorecard</Link>
+            </nav>
+          </div>
         )}
       </header>
 
