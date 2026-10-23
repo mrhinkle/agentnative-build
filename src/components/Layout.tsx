@@ -101,6 +101,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               <li><a href="/index.md" className="hover:text-white transition-colors">/index.md</a></li>
               <li><a href="/future.md" className="hover:text-white transition-colors">/future.md</a></li>
               <li><a href="/examples.md" className="hover:text-white transition-colors">/examples.md</a></li>
+              <li><a href="/reference.md" className="hover:text-white transition-colors">/reference.md</a></li>
               <li><a href="/agents.md" className="hover:text-white transition-colors">/agents.md</a></li>
               <li><a href="/llms.txt" className="hover:text-white transition-colors">/llms.txt</a></li>
               <li><a href="/llms-full.txt" className="hover:text-white transition-colors">/llms-full.txt</a></li>

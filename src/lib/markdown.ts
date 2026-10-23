@@ -2,7 +2,7 @@ import {
   SITE, HOME, FUTURE, EXAMPLES, HOME_DEFINITION, HOME_DEFINITION_MORE, STAGES, PRINCIPLES, DEMO, ANATOMY,
   SNIPPETS, SCORE_QUESTIONS, SCORE_TIERS, AVOID, TIMELINE, HOME_FAQ, FUTURE_LEDE, FUTURE_BLOCKS, FUTURE_FAQ,
   FUTURE_SOURCES, FUTURE_SOURCES_NOTE, EXAMPLES_LEDE, PROJECTS, EXAMPLES_COMMON, EXAMPLES_FAQ,
-  EXAMPLES_SCORE_BLOCKS, ABOUT, ABOUT_LEDE, ABOUT_BLOCKS, ABOUT_FAQ, AGENTS, AGENTS_LEDE, AGENTS_BLOCKS, AGENTS_FAQ, PMS, PMS_LEDE, PMS_BLOCKS, PMS_FAQ,
+  EXAMPLES_SCORE_BLOCKS, ABOUT, ABOUT_LEDE, ABOUT_BLOCKS, ABOUT_FAQ, AGENTS, AGENTS_LEDE, AGENTS_BLOCKS, AGENTS_FAQ, REFERENCE, REFERENCE_LEDE, REFERENCE_BLOCKS, REFERENCE_FAQ, REFERENCE_SOURCES, REFERENCE_SOURCES_NOTE, PMS, PMS_LEDE, PMS_BLOCKS, PMS_FAQ,
   type Block, type Faq,
 } from "./data";
 
@@ -93,7 +93,17 @@ export function agentsMd(): string {
   ].join("\n\n") + "\n";
 }
 
+export function referenceMd(): string {
+  return [
+    head(REFERENCE.title, "/reference", REFERENCE_LEDE),
+    blocksMd(REFERENCE_BLOCKS),
+    "## Frequently asked questions\n\n" + faqMd(REFERENCE_FAQ),
+    "## Sources\n\n" + REFERENCE_SOURCES.map((s, i) => `${i + 1}. [${s.title}](${s.href}), ${s.publisher}`).join("\n") + "\n\n" + REFERENCE_SOURCES_NOTE,
+  ].join("\n\n") + "\n";
+}
+
 export function markdownFor(path: string): string {
+  if (path === "/reference") return referenceMd();
   if (path === "/agents") return agentsMd();
   if (path === "/about") return aboutMd();
   if (path === "/product-managers") return pmsMd();
@@ -110,7 +120,7 @@ export function llmsTxt(): string {
 - [What is agent-native software?](${SITE.url}/index.md): definition, principles, anatomy, scorecard, anti-patterns
 - [The future of agent-native interfaces](${SITE.url}/future.md): MCP, MCP Apps, WebMCP, and conversational UI that complements forms
 - [Agent-native examples](${SITE.url}/examples.md): ConferenceOS and Agent Kontrol, with strict scorecard results
-- [Agent-native product management: a guide for PMs](${SITE.url}/product-managers.md): use cases, questions for engineering, metrics, roadmap, PRD checklist, glossary\n- [About Agent Native](${SITE.url}/about.md): who publishes it (part of The AIE Network, theaie.net) and how we source, score, and correct\n- [For agents](${SITE.url}/agents.md): every agent surface on this site (WebMCP, MCP server, llms-full.txt, Markdown negotiation)
+- [Agent-native product management: a guide for PMs](${SITE.url}/product-managers.md): use cases, questions for engineering, metrics, roadmap, PRD checklist, glossary\n- [About Agent Native](${SITE.url}/about.md): who publishes it (part of The AIE Network, theaie.net) and how we source, score, and correct\n- [Reference: every agent-native technology](${SITE.url}/reference.md): llms.txt, MCP, MCP Apps, WebMCP, A2A, OpenAPI, scoped credentials, idempotency, with status and a check for each\n- [For agents](${SITE.url}/agents.md): every agent surface on this site (WebMCP, MCP server, llms-full.txt, Markdown negotiation)
 
 ## Optional
 - [Full site as one file](${SITE.url}/llms-full.txt)
@@ -120,7 +130,7 @@ export function llmsTxt(): string {
 }
 
 export function llmsFullTxt(): string {
-  const pages = ["/", "/future", "/examples", "/product-managers", "/agents", "/about"];
+  const pages = ["/", "/future", "/examples", "/product-managers", "/agents", "/reference", "/about"];
   return `# ${SITE.name}: full site\n\n> The complete content of ${SITE.url} as one Markdown file. Index: ${SITE.url}/llms.txt\n\n` +
     pages.map((p) => markdownFor(p).trim()).join("\n\n---\n\n") + "\n";
 }

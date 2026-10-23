@@ -5,7 +5,7 @@
 import { HOME_DEFINITION, PRINCIPLES, SCORE_QUESTIONS, SCORE_TIERS, SITE } from "./data";
 import { markdownFor } from "./markdown";
 
-export const PAGE_PATHS = ["/", "/future", "/examples", "/product-managers", "/agents", "/about"];
+export const PAGE_PATHS = ["/", "/future", "/examples", "/product-managers", "/agents", "/reference", "/about"];
 
 /** An error an agent can act on: what failed, how to fix it, and whether a retry could succeed. */
 export class ToolError extends Error {

@@ -7,7 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const dist = path.resolve(import.meta.dirname, "..", "dist");
-const routes = [["/", "index.html", "index.md"], ["/future", "future/index.html", "future.md"], ["/examples", "examples/index.html", "examples.md"], ["/product-managers", "product-managers/index.html", "product-managers.md"], ["/agents", "agents/index.html", "agents.md"], ["/about", "about/index.html", "about.md"]];
+const routes = [["/", "index.html", "index.md"], ["/future", "future/index.html", "future.md"], ["/examples", "examples/index.html", "examples.md"], ["/product-managers", "product-managers/index.html", "product-managers.md"], ["/agents", "agents/index.html", "agents.md"], ["/reference", "reference/index.html", "reference.md"], ["/about", "about/index.html", "about.md"]];
 const banned = ["delve", "realm", "unleash", "tapestry", "paradigm", "landscape", "cornerstone", "game-changer", "revolutionary", "unlock potential"];
 let failures = 0;
 const fail = (m) => { failures++; console.error("  ✗ " + m); };

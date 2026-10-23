@@ -12,7 +12,7 @@ export const SITE = {
   url: "https://agentnative.build",
   author: "Mark Hinkle",
   published: "2026-10-21",
-  modified: "2026-10-21",
+  modified: "2026-10-23",
   tagline: "Software built for a new reader",
   network: { name: "The AIE Network", url: "https://theaie.net" },
 };
@@ -22,6 +22,7 @@ export const NAV_ITEMS = [
   { label: "Future", href: "/future" },
   { label: "Examples", href: "/examples" },
   { label: "For PMs", href: "/product-managers" },
+  { label: "Reference", href: "/reference" },
   { label: "For agents", href: "/agents" },
   { label: "About", href: "/about" },
 ];
@@ -451,7 +452,7 @@ export const AGENTS_BLOCKS: Block[] = [
   { type: "table", head: ["Surface", "Where", "What an agent gets"], rows: [
     ["llms.txt", "/llms.txt", "A short index of pages, one line each"],
     ["llms-full.txt", "/llms-full.txt", "The whole site as one Markdown file, for a single fetch"],
-    ["Markdown twins", "/index.md, /future.md, /examples.md, /product-managers.md, /agents.md", "Each page as clean Markdown"],
+    ["Markdown twins", "/index.md, /future.md, /examples.md, /product-managers.md, /agents.md, /reference.md, /about.md", "Each page as clean Markdown"],
     ["Content negotiation", "Any page with `Accept: text/markdown`", "The same URL, answered as Markdown"],
     ["Remote MCP server", "/api/mcp", "Five read-only tools over JSON-RPC"],
     ["WebMCP tools", "In the page, via `navigator.modelContext`", "The same tools plus reader-view and navigation control, for browser agents"],
@@ -521,6 +522,220 @@ export const AGENTS_FAQ: Faq[] = [
   { q: "Does this site have an MCP server?", a: `Yes. A read-only remote MCP server runs at ${MCP_ENDPOINT} and exposes five tools: get_definition, list_principles, score_product, get_page, and search_site.` },
   { q: "Does this site support WebMCP?", a: "Yes, when the browser exposes the WebMCP API. The page registers seven tools through navigator.modelContext and registers nothing otherwise." },
 ];
+
+/* ───────────────────────── Reference ───────────────────────── */
+
+export const REFERENCE: PageMeta = {
+  path: "/reference",
+  title: "Agent-Native Reference: MCP, WebMCP, llms.txt & More",
+  description:
+    "A plain-language reference to every technology behind agent-native software: llms.txt, MCP, MCP Apps, WebMCP, A2A, OpenAPI, OAuth scopes, idempotency, and more.",
+  label: "Reference",
+  h1: "The agent-native reference: every technology, what it does, and how to check it",
+  crumb: "Reference",
+  md: "/reference.md",
+};
+
+export const REFERENCE_LEDE =
+  "Agent-native software is built from about twenty small pieces, and most of them are not new inventions: files, headers, schemas, and protocols. This page names each one, says who defines it, how settled it is, and how to tell whether your product has it. Status labels matter here. Some are mature standards, some are community conventions, and a few are drafts that may still change.";
+
+export const REFERENCE_BLOCKS: Block[] = [
+  { type: "h2", text: "What does an agent-native product look like, piece by piece?" },
+  { type: "answer", text: "It can be found, understood, used, trusted, and tested by an agent. Each of those five jobs has a small set of technologies behind it, listed below from the most settled to the least." },
+  { type: "table", head: ["Job", "Technologies", "Status"], rows: [
+    ["Be found", "llms.txt, llms-full.txt, Markdown pages, AGENTS.md, sitemap.xml, robots.txt, JSON-LD", "Mostly conventions and mature web standards"],
+    ["Be understood", "OpenAPI, JSON Schema, tool descriptions", "Mature"],
+    ["Be used", "MCP, MCP Apps, WebMCP, A2A", "One open spec, one official extension, one draft, one young protocol"],
+    ["Be trusted", "Scoped credentials (OAuth), idempotency keys, dry-run, structured errors, receipts and audit logs, limits", "Mixed: standards plus design patterns"],
+    ["Be tested", "Agent-driven evals in CI", "A practice, not a standard"],
+  ] },
+  { type: "callout", label: "How to use this page", text: "Score your product on the [12-question scorecard](/#score) first. Then use this page to look up the pieces behind each question you missed. Each entry ends with a one-line check you can run." },
+
+  { type: "h2", text: "What is llms.txt?" },
+  { type: "answer", text: "llms.txt is a Markdown file at the root of your site that lists your most useful pages, one line each, so a model or developer tool can find clean content without crawling your navigation." },
+  { type: "callout", label: "In plain English", text: "It is a table of contents written for AI instead of a sitemap written for search engines." },
+  { type: "ul", items: [
+    "**Defined by:** a community proposal published at llmstxt.org. It is not an IETF or W3C standard.",
+    "**Status:** convention. Support from search engines and model providers is not confirmed, so treat it as a low-cost courtesy that some agents and developer tools read.",
+    "**Check it:** `curl -s https://yoursite.com/llms.txt` returns Markdown with a title and links, not an HTML page.",
+  ] },
+
+  { type: "h2", text: "What is llms-full.txt?" },
+  { type: "answer", text: "llms-full.txt is the same idea with the content inline: your whole site (or docs) as one Markdown file, so an agent can load everything in a single request." },
+  { type: "ul", items: [
+    "**Defined by:** community convention, a companion to llms.txt.",
+    "**Status:** convention. Keep it under the size an agent can reasonably read; split large documentation sets.",
+    "**Check it:** `curl -s https://yoursite.com/llms-full.txt | wc -c` returns a plausible size and the text matches what is on the pages.",
+  ] },
+
+  { type: "h2", text: "What are Markdown pages and content negotiation?" },
+  { type: "answer", text: "Serve a clean Markdown version of each page (for example `/pricing.md`), and also answer the normal URL with Markdown when the request says `Accept: text/markdown`. Agents spend fewer tokens on Markdown than on HTML, and they skip the page chrome." },
+  { type: "ul", items: [
+    "**Defined by:** HTTP content negotiation (the `Accept` header) is a mature web standard. Publishing a `.md` twin is a convention.",
+    "**Status:** the negotiation mechanism is mature; how many agents ask for Markdown is not yet widespread.",
+    "**Check it:** `curl -s -H 'Accept: text/markdown' https://yoursite.com/` returns Markdown, and a browser still gets HTML.",
+  ] },
+
+  { type: "h2", text: "What is AGENTS.md?" },
+  { type: "answer", text: "AGENTS.md is a plain Markdown file at the root of a code repository that tells coding agents how to build, test, and work in the project: the commands to run, the conventions to follow, the things not to touch." },
+  { type: "callout", label: "In plain English", text: "It is a README for the AI that works on your code, as opposed to the people who read it." },
+  { type: "ul", items: [
+    "**Defined by:** an open format, contributed by OpenAI and one of the founding projects of the Linux Foundation's Agentic AI Foundation, announced December 9, 2025 [[1]](#src-1).",
+    "**Status:** widely read by coding agents; a convention rather than a protocol.",
+    "**Check it:** `AGENTS.md` exists at the repo root and lists the exact commands that build and test the project.",
+  ] },
+
+  { type: "h2", text: "Do sitemap.xml, robots.txt, and JSON-LD still matter?" },
+  { type: "answer", text: "Yes. They are how crawlers, including the ones that feed AI answers, discover and understand your pages. They are mature and unglamorous, and they come before any agent-specific file." },
+  { type: "ul", items: [
+    "**sitemap.xml:** the sitemaps.org protocol lists your URLs and last-modified dates.",
+    "**robots.txt:** the Robots Exclusion Protocol (RFC 9309) says which crawlers may fetch what. AI companies publish their own crawler names, so decide deliberately which to allow; llms.txt does not control crawling [[2]](#src-2).",
+    "**JSON-LD:** structured data in the page head, using schema.org types such as Article, FAQPage, and Product. It states facts (who wrote this, when, what the questions are) in a form a machine does not have to guess.",
+    "**Check it:** `/sitemap.xml` and `/robots.txt` resolve, and a structured-data validator shows no errors on your key pages.",
+  ] },
+
+  { type: "h2", text: "What are OpenAPI and JSON Schema, and why do agents need them?" },
+  { type: "answer", text: "OpenAPI describes your HTTP API (endpoints, parameters, responses) in a machine-readable file. JSON Schema describes the exact shape of a piece of data. Together they let an agent call your product correctly without reading a human manual." },
+  { type: "callout", label: "In plain English", text: "If your API is a restaurant, OpenAPI is the menu in a format a robot can read, and JSON Schema is the exact order form for each dish." },
+  { type: "ul", items: [
+    "**Defined by:** the OpenAPI Initiative (Linux Foundation) and the JSON Schema project [[3]](#src-3).",
+    "**Status:** mature. MCP tools and WebMCP tools both describe their inputs with JSON Schema.",
+    "**Check it:** your API has a published spec file, and every field an agent must send has a type and a description.",
+  ] },
+
+  { type: "h2", text: "What is MCP?" },
+  { type: "answer", text: "The Model Context Protocol (MCP) is an open protocol that lets AI applications discover and call tools, read resources, and use prompts that a server exposes. Build a capability once as an MCP tool and any compatible agent can use it." },
+  { type: "ul", items: [
+    "**Defined by:** Anthropic introduced it in November 2024. It moved to the Linux Foundation's Agentic AI Foundation on December 9, 2025 [[1]](#src-1). The current published specification is 2026-07-28 [[4]](#src-4).",
+    "**Status:** open specification with vendor-neutral governance and wide client support.",
+    "**Check it:** a standard MCP client can connect to your server, list tools, and call one successfully. Details and a live example: [the future of interfaces](/future) and [this site's server](/agents).",
+  ] },
+
+  { type: "h2", text: "What are MCP Apps?" },
+  { type: "answer", text: "MCP Apps is an official extension that lets a tool return an interactive interface, such as a picker, a chart, or an approval card, which the AI client shows inside the conversation." },
+  { type: "ul", items: [
+    "**Defined by:** the MCP project, announced January 26, 2026 [[5]](#src-5).",
+    "**Status:** official extension. Client support varies and is changing.",
+    "**Check it:** your riskiest action returns an approval screen the user can read before confirming. See [the future of interfaces](/future).",
+  ] },
+
+  { type: "h2", text: "What is WebMCP?" },
+  { type: "answer", text: "WebMCP is a proposed browser API that lets a web page register JavaScript functions as tools for the browser's AI agent, running in the user's own signed-in session." },
+  { type: "ul", items: [
+    "**Defined by:** the W3C Web Machine Learning Community Group.",
+    "**Status:** draft proposal. The entry point has changed between drafts, so prototype behind a flag and check the current spec [[6]](#src-6).",
+    "**Check it:** open your page in a browser that supports the API and list the registered tools; an agent should be able to complete your main task without clicking through the interface.",
+  ] },
+
+  { type: "h2", text: "What is A2A, and how is it different from MCP?" },
+  { type: "answer", text: "The Agent2Agent protocol (A2A) lets one AI agent discover and delegate work to another agent, even when they come from different vendors. MCP connects an agent to tools and data; A2A connects agents to each other." },
+  { type: "callout", label: "In plain English", text: "MCP is how an assistant uses your product. A2A is how an assistant hands a job to another assistant, such as a travel agent passing a booking to an airline's agent." },
+  { type: "ul", items: [
+    "**Defined by:** created at Google and contributed to the Linux Foundation in 2025. An agent publishes an Agent Card, a JSON description of what it can do, at a well-known URL [[7]](#src-7).",
+    "**Status:** young open protocol with a 1.0 line. Many published agent cards use an older path, so read the current specification before building.",
+    "**Do you need it?** Most products start with MCP. Reach for A2A when your product is itself an agent that other agents should delegate to.",
+  ] },
+
+  { type: "h2", text: "How should an agent get permission: what are scoped credentials?" },
+  { type: "answer", text: "Give each agent its own credential that is limited to named actions, can expire, and can be revoked without affecting anyone else. A shared admin key fails this test." },
+  { type: "ul", items: [
+    "**Defined by:** OAuth is the mature standard; MCP's authorization model builds on it. Per-agent keys with named scopes are a common pattern when OAuth is more than a product needs.",
+    "**Status:** standard plus pattern. Hash credentials at rest and show the secret only once.",
+    "**Check it:** you can create a key that can read but not write, use it, and revoke it, all without a human logging in as an administrator for each call. [Agent Kontrol](/examples) is building exactly this.",
+  ] },
+
+  { type: "h2", text: "What are idempotency keys?" },
+  { type: "answer", text: "An idempotency key is a unique token the caller sends with a write. If the same request arrives twice, because an agent retried after a timeout, the server performs it once and returns the original result." },
+  { type: "callout", label: "In plain English", text: "It is what stops an agent that retries from charging a card, booking a seat, or sending an email twice." },
+  { type: "ul", items: [
+    "**Defined by:** an `Idempotency-Key` HTTP header, popularized by payment APIs and described in an IETF draft that has been revised several times [[8]](#src-8).",
+    "**Status:** widely used pattern; the IETF specification is a draft.",
+    "**Check it:** send the same write twice with the same key and confirm exactly one change happened.",
+  ] },
+
+  { type: "h2", text: "What is dry-run or preview?" },
+  { type: "answer", text: "Every costly or irreversible action offers a mode that shows exactly what would happen without doing it. The agent proposes, the human reviews the preview, and only then does the real call run." },
+  { type: "ul", items: [
+    "**Defined by:** a design pattern, not a standard. Common forms are a `dry_run` flag or a separate preview tool that returns the same change set the real call would apply.",
+    "**Check it:** the preview and the real call share one code path, and the preview changes nothing.",
+  ] },
+
+  { type: "h2", text: "What does a structured error look like?" },
+  { type: "answer", text: "A structured error tells an agent what went wrong in a machine-readable code, what to do about it in plain words, and whether trying again can help. A bare status code or a prose message does not." },
+  { type: "code", caption: "A flat, additive shape an agent can act on", text: `{
+  "error": "title is required",
+  "code": "missing_field",
+  "fix": "Add the fields listed in fields and send the request again.",
+  "retryable": false,
+  "fields": { "title": "title is required" }
+}` },
+  { type: "ul", items: [
+    "**Defined by:** RFC 9457 (Problem Details for HTTP APIs) is the standard shape for HTTP; the `code`, `fix`, and `retryable` fields shown here are a design pattern in the same spirit [[9]](#src-9).",
+    "**Check it:** trigger a bad request on purpose and confirm the response says what to change and whether to retry.",
+  ] },
+
+  { type: "h2", text: "What are receipts and audit logs?" },
+  { type: "answer", text: "After an agent acts, the product records who did it (this person, or this agent acting for them), what changed, and how to undo it, and lets you query that record." },
+  { type: "ul", items: [
+    "**Defined by:** a design pattern. Record the actor type separately from the account, so \"a human did this\" and \"an agent did this\" are different facts.",
+    "**Check it:** pick any change made by an agent last week and find who made it, when, and how to reverse it.",
+  ] },
+
+  { type: "h2", text: "What are pagination, field selection, and concise responses?" },
+  { type: "answer", text: "Agents pay for every token they read. Let them page through long lists, ask for only the fields they need, and request a short format, so a lookup does not return a whole database." },
+  { type: "ul", items: [
+    "**Defined by:** API design practice. Typical forms are `limit` and `cursor` parameters, a `fields` parameter, and a `format=concise` option.",
+    "**Check it:** your biggest list endpoint can return ten rows with only two fields each, and says how to get the next ten.",
+  ] },
+
+  { type: "h2", text: "What are agent limits?" },
+  { type: "answer", text: "Budgets and rate limits set per agent, not per account: how many calls, how much spend, which actions. They keep one runaway agent from using up everyone's allowance or doing damage." },
+  { type: "ul", items: [
+    "**Defined by:** a design pattern. HTTP `429` with a `Retry-After` header is the standard way to say slow down.",
+    "**Check it:** you can cap one agent credential without affecting any other, and you can see its usage.",
+  ] },
+
+  { type: "h2", text: "How do you test that an agent can really use your product?" },
+  { type: "answer", text: "Run a real agent client against your product in continuous integration, with a task and a pass or fail result. Reading the protocol docs is not a test; an agent completing the task is." },
+  { type: "ul", items: [
+    "**Defined by:** a practice. A minimal version connects the official MCP client to your server, lists the tools, calls them, and fails the build if a call breaks.",
+    "**Check it:** a pull request that breaks a tool's schema turns CI red.",
+  ] },
+
+  { type: "h2", text: "Where should you start?" },
+  { type: "ol", items: [
+    "Publish `/llms.txt`, clean Markdown for your key pages, and a sitemap.",
+    "Describe your API with OpenAPI and give every field a type and a description.",
+    "Expose your most-used workflow as an MCP tool with a schema, a dry-run, and an idempotency key.",
+    "Return structured errors and keep a receipt for every agent action.",
+    "Issue scoped, revocable credentials per agent, with limits.",
+    "Add an agent to CI. Then look at MCP Apps and WebMCP as the interface layer.",
+  ] },
+  { type: "p", text: "See how two real products fare on [the examples page](/examples), and the [product manager guide](/product-managers) for how to prioritize this work." },
+];
+
+export const REFERENCE_FAQ: Faq[] = [
+  { q: "What is the difference between MCP and A2A?", a: "MCP connects an AI agent to tools and data that a server exposes. A2A, the Agent2Agent protocol, connects one agent to another so they can delegate work across vendors. Most products start with MCP." },
+  { q: "Is llms.txt a standard?", a: "No. It is a community convention published at llmstxt.org. Support from search engines and model providers is not confirmed, so treat it as a low-cost courtesy to agents and developer tools that read it." },
+  { q: "What is the difference between llms.txt and AGENTS.md?", a: "llms.txt describes a website's content for models that read the site. AGENTS.md sits in a code repository and tells coding agents how to build, test, and work in that project." },
+  { q: "What is an idempotency key?", a: "A unique token sent with a write request so that a retried request is performed once. It stops an agent that retries after a timeout from, for example, charging a card twice." },
+  { q: "Do I need WebMCP to be agent-native?", a: "No. WebMCP is a draft browser proposal. A server-side MCP tool works when no browser is open and is the safer first step; WebMCP is worth prototyping behind a flag." },
+];
+
+export const REFERENCE_SOURCES: Source[] = [
+  { title: "Linux Foundation announces the formation of the Agentic AI Foundation (MCP, goose, AGENTS.md)", publisher: "Linux Foundation", href: "https://www.linuxfoundation.org/press/linux-foundation-announces-the-formation-of-the-agentic-ai-foundation" },
+  { title: "Robots Exclusion Protocol, RFC 9309", publisher: "IETF", href: "https://www.rfc-editor.org/rfc/rfc9309" },
+  { title: "OpenAPI Specification and JSON Schema", publisher: "OpenAPI Initiative", href: "https://www.openapis.org/" },
+  { title: "Model Context Protocol Specification, version 2026-07-28", publisher: "modelcontextprotocol.io", href: "https://modelcontextprotocol.io/specification/2026-07-28" },
+  { title: "MCP Apps: bringing UI capabilities to MCP clients (2026-01-26)", publisher: "Model Context Protocol blog", href: "https://blog.modelcontextprotocol.io/posts/2026-01-26-mcp-apps/" },
+  { title: "WebMCP API Proposal", publisher: "W3C Web Machine Learning Community Group", href: "https://webmachinelearning.github.io/webmcp/docs/proposal.html" },
+  { title: "Agent2Agent (A2A) Protocol", publisher: "a2a-protocol.org", href: "https://a2a-protocol.org/" },
+  { title: "The Idempotency-Key HTTP Header Field (Internet-Draft)", publisher: "IETF HTTPAPI Working Group", href: "https://datatracker.ietf.org/doc/html/draft-ietf-httpapi-idempotency-key-header" },
+  { title: "Problem Details for HTTP APIs, RFC 9457", publisher: "IETF", href: "https://www.rfc-editor.org/rfc/rfc9457" },
+];
+
+export const REFERENCE_SOURCES_NOTE =
+  "Status labels reflect sources read on 2026-10-23. The AGENTS.md, MCP, A2A, and idempotency-draft details were checked against the pages above or search results that cite them. llms.txt and the design patterns have no single authority, so their status is our reading. Specifications change: check the current version before building.";
 
 /* ───────────────────────── For product managers ───────────────────────── */
 

@@ -4,9 +4,9 @@
  */
 import { next, rewrite } from "@vercel/functions";
 
-export const config = { matcher: ["/", "/future", "/examples", "/agents"] };
+export const config = { matcher: ["/", "/future", "/examples", "/product-managers", "/agents", "/reference", "/about"] };
 
-const TWINS: Record<string, string> = { "/": "/index.md", "/future": "/future.md", "/examples": "/examples.md", "/agents": "/agents.md" };
+const TWINS: Record<string, string> = { "/": "/index.md", "/future": "/future.md", "/examples": "/examples.md", "/product-managers": "/product-managers.md", "/agents": "/agents.md", "/reference": "/reference.md", "/about": "/about.md" };
 
 export default function middleware(request: Request) {
   const accept = request.headers.get("accept") ?? "";

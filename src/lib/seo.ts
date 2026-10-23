@@ -1,10 +1,10 @@
 import {
-  SITE, HOME, FUTURE, EXAMPLES, PMS, AGENTS, ABOUT, HOME_FAQ, FUTURE_FAQ, EXAMPLES_FAQ, PMS_FAQ, AGENTS_FAQ, ABOUT_FAQ, type PageMeta, type Faq,
+  SITE, HOME, FUTURE, EXAMPLES, PMS, AGENTS, REFERENCE, ABOUT, HOME_FAQ, FUTURE_FAQ, EXAMPLES_FAQ, PMS_FAQ, AGENTS_FAQ, REFERENCE_FAQ, ABOUT_FAQ, type PageMeta, type Faq,
 } from "./data";
 
-export const PAGES: PageMeta[] = [HOME, FUTURE, EXAMPLES, PMS, AGENTS, ABOUT];
+export const PAGES: PageMeta[] = [HOME, FUTURE, EXAMPLES, PMS, AGENTS, REFERENCE, ABOUT];
 
-const FAQS: Record<string, Faq[]> = { "/": HOME_FAQ, "/future": FUTURE_FAQ, "/examples": EXAMPLES_FAQ, "/product-managers": PMS_FAQ, "/agents": AGENTS_FAQ, "/about": ABOUT_FAQ };
+const FAQS: Record<string, Faq[]> = { "/": HOME_FAQ, "/future": FUTURE_FAQ, "/examples": EXAMPLES_FAQ, "/product-managers": PMS_FAQ, "/agents": AGENTS_FAQ, "/reference": REFERENCE_FAQ, "/about": ABOUT_FAQ };
 
 export function metaFor(path: string): PageMeta | undefined {
   return PAGES.find((p) => p.path === path);
