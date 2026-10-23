@@ -67,6 +67,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               <button aria-pressed={!agent} onClick={() => toggle(false)} className={`rounded px-3 py-1.5 transition-colors ${!agent ? "bg-white/10 text-white" : "text-white/50 hover:text-white"}`}>Human</button>
               <button aria-pressed={agent} onClick={() => toggle(true)} className={`rounded px-3 py-1.5 transition-colors ${agent ? "bg-emerald-400/20 text-emerald-300" : "text-white/50 hover:text-white"}`}>Agent</button>
             </div>
+            <Link to="/#score" className="hidden sm:inline-flex rounded bg-[#2563EB] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2563EB]/90 transition-colors">Take the scorecard</Link>
             <button className="p-2 text-white/70 hover:text-white transition-colors" aria-label={menu ? "Close menu" : "Open menu"} aria-expanded={menu} aria-controls="site-menu" onClick={() => setMenu(!menu)}>{menu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}</button>
           </div>
         </div>
@@ -77,7 +78,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                 const here = !n.href.includes("#") && pathname === n.href;
                 return <Link key={n.href} to={n.href} aria-current={here ? "page" : undefined} className={`block py-2.5 text-sm font-medium transition-colors ${here ? "text-white" : "text-white/70 hover:text-white"}`}>{n.label}</Link>;
               })}
-              <Link to="/#score" className="mt-3 block rounded bg-[#2563EB] px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-[#2563EB]/90 transition-colors">Take the scorecard</Link>
+              <Link to="/#score" className="mt-3 block sm:hidden rounded bg-[#2563EB] px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-[#2563EB]/90 transition-colors">Take the scorecard</Link>
             </nav>
           </div>
         )}
