@@ -4,9 +4,13 @@ var SITE = {
   url: "https://agentnative.build",
   author: "Mark Hinkle",
   published: "2026-10-21",
-  modified: "2026-10-23",
+  modified: "2026-10-24",
   tagline: "Software built for a new reader",
   network: { name: "The AIE Network", url: "https://theaie.net" }
+};
+var AIOS_COMPANION = {
+  operatingModel: "https://aios-site-pink.vercel.app/the-operating-model",
+  bookAppendix: "https://aios-site-pink.vercel.app/book#agent-native-scorecard"
 };
 var HOME = {
   path: "/",
@@ -137,7 +141,7 @@ var TIMELINE = [
 var HOME_FAQ = [
   { q: "Is agent-native just having an API?", a: "An API is necessary, not sufficient. Agent-native adds self-description, safe retries, teaching errors, scoped delegated authority, and verification." },
   { q: "Do humans get worse software when it is agent-native?", a: "No. Clear errors, undo, audit trails, and least privilege make products better for people too." },
-  { q: "What is the difference between agent-native and AI-native?", a: "AI-native usually describes products that use AI inside the experience. Agent-native describes products that AI agents can operate: discoverable, callable, limited, and verifiable. A product can be either, neither, or both." },
+  { q: "What is the difference between agent-native and AI-native?", a: "AI-native describes a company, team, or person whose work is organized around AI. The AIOS operating model applies that idea to enterprises, professionals, and builders. Agent-native answers a different question about a different subject: whether software can be discovered, understood, operated safely, and verified by AI agents. A product can be agent-native whether or not the organization that built it is AI-native." },
   { q: "Where do I start making a product agent-native?", a: "Take the scorecard, pick the lowest-scoring principle, and fix it for your single most-used workflow." }
 ];
 var FUTURE = {
@@ -727,7 +731,8 @@ var ABOUT_BLOCKS = [
   { type: "p", text: "Mark is the founding publisher of The Artificially Intelligent Enterprise. You can read more on the [About page at theaie.net](https://theaie.net/about) or see where he [speaks](https://theaie.net/about/speaking)." },
   { type: "h2", text: "Why does this site exist?" },
   { type: "answer", text: "Because products are starting to be used by AI agents, and most guidance on the topic is written for engineers. Agent Native explains the idea in plain language for builders and product managers, with sources, dates, and honest scoring." },
-  { type: "p", text: "It is also a working test. The site is built the way it recommends: one data file generates the pages, the Markdown versions, the llms.txt files, the structured data, and a small MCP server. See [how the site serves agents](/agents)." },
+  { type: "p", text: "Agent Native is the product-design companion to [AIOS](https://aios-site-pink.vercel.app/the-operating-model), Mark Hinkle's broader operating model and living field guide for enterprises, professionals, and builders becoming AI-native. AIOS defines how people and organizations become AI-native; Agent Native defines how software becomes usable by agents." },
+  { type: "p", text: "This site is also a working test. It is built the way it recommends: one data file generates the pages, the Markdown versions, the llms.txt files, the structured data, and a small MCP server. See [how the site serves agents](/agents)." },
   { type: "h2", text: "How do we source, score, and correct what we publish?" },
   { type: "ul", items: [
     "**Primary sources first.** Claims about MCP, MCP Apps, and WebMCP cite the specification, the official announcement, or the proposal itself, with dates. Where we rely on secondary reports, the page says so.",
@@ -802,6 +807,9 @@ function homeMd() {
 ` + t.steps.map((st, i) => `${i + 1}. ${st.t}${st.d ? ` (${st.d})` : ""}`).join("\n")).join("\n\n") + "\n\nIllustrative example, not a benchmark.");
   s.push("## What does an agent-native product look like?\n\n" + ANATOMY.map((a) => `${a.n}. **${a.name}**: ${a.text}`).join("\n") + "\n\nExample llms.txt:\n\n```\n" + SNIPPETS.llms + "\n```\n\nExample error an agent can act on:\n\n```json\n" + SNIPPETS.error + "\n```");
   s.push("## How agent-native is your product? A 12-question scorecard\n\nOne point per yes. " + SCORE_TIERS.map((t, i) => `${i === 0 ? 0 : SCORE_TIERS[i - 1].max + 1}-${t.max}: ${t.name}`).join("; ") + ".\n\n" + SCORE_QUESTIONS.map((q, i) => `${i + 1}. ${q}`).join("\n"));
+  s.push(`## How this fits AIOS
+
+AIOS defines how people and organizations become AI-native. Agent Native defines how software becomes usable by agents. The product scorecard is used in [Appendix P of the AIOS book](${AIOS_COMPANION.bookAppendix}) as evidence for one named product surface; it is not a second maturity ladder or a certification. [Explore the AIOS operating model](${AIOS_COMPANION.operatingModel}).`);
   s.push("## Agent-washing: what to avoid\n\n" + AVOID.map((a) => `- **${a[0]}** ${a[1]}`).join("\n"));
   s.push("## How we got here\n\n" + TIMELINE.map((t) => `- **${t[0]}.** ${t[1]}`).join("\n"));
   s.push("## Go deeper\n\n- [The future of interfaces: MCP, MCP Apps, WebMCP, conversational UI](" + SITE.url + "/future)\n- [Agent-native product management: a guide for PMs](" + SITE.url + "/product-managers)\n- [Examples: ConferenceOS and Agent Kontrol, scored honestly](" + SITE.url + "/examples)");

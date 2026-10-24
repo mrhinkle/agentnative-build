@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import { Menu, X } from "lucide-react";
-import { NAV_ITEMS, SITE } from "@/lib/data";
+import { AIOS_COMPANION, NAV_ITEMS, SITE } from "@/lib/data";
 import { metaFor } from "@/lib/seo";
 import ReaderView from "@/components/ReaderView";
 import { registerWebMcp } from "@/lib/webmcp";
@@ -92,6 +92,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             <p className="font-mono text-sm font-bold">agent<span className="text-[#f44800]">/</span>native</p>
             <p className="mt-3 text-sm text-white/50 max-w-xs leading-relaxed">A field guide to building software that AI agents can discover, use, and be trusted with.</p>
             <p className="mt-4 text-sm text-white/50">Part of <a href={SITE.network.url} className="text-white/80 underline decoration-white/30 hover:decoration-white transition-colors" target="_blank" rel="noopener noreferrer">{SITE.network.name} ↗</a></p>
+            <p className="mt-2 text-sm text-white/50">Product-design companion to <a href={AIOS_COMPANION.operatingModel} className="text-white/80 underline decoration-white/30 hover:decoration-white transition-colors">AIOS ↗</a></p>
           </div>
           <div>
             <p className="label-mono text-white/50 mb-3">Read</p>

@@ -12,9 +12,14 @@ export const SITE = {
   url: "https://agentnative.build",
   author: "Mark Hinkle",
   published: "2026-10-21",
-  modified: "2026-10-23",
+  modified: "2026-10-24",
   tagline: "Software built for a new reader",
   network: { name: "The AIE Network", url: "https://theaie.net" },
+};
+
+export const AIOS_COMPANION = {
+  operatingModel: "https://aios-site-pink.vercel.app/the-operating-model",
+  bookAppendix: "https://aios-site-pink.vercel.app/book#agent-native-scorecard",
 };
 
 export const NAV_ITEMS = [
@@ -186,7 +191,7 @@ export const TIMELINE = [
 export const HOME_FAQ: Faq[] = [
   { q: "Is agent-native just having an API?", a: "An API is necessary, not sufficient. Agent-native adds self-description, safe retries, teaching errors, scoped delegated authority, and verification." },
   { q: "Do humans get worse software when it is agent-native?", a: "No. Clear errors, undo, audit trails, and least privilege make products better for people too." },
-  { q: "What is the difference between agent-native and AI-native?", a: "AI-native usually describes products that use AI inside the experience. Agent-native describes products that AI agents can operate: discoverable, callable, limited, and verifiable. A product can be either, neither, or both." },
+  { q: "What is the difference between agent-native and AI-native?", a: "AI-native describes a company, team, or person whose work is organized around AI. The AIOS operating model applies that idea to enterprises, professionals, and builders. Agent-native answers a different question about a different subject: whether software can be discovered, understood, operated safely, and verified by AI agents. A product can be agent-native whether or not the organization that built it is AI-native." },
   { q: "Where do I start making a product agent-native?", a: "Take the scorecard, pick the lowest-scoring principle, and fix it for your single most-used workflow." },
 ];
 
@@ -888,7 +893,8 @@ export const ABOUT_BLOCKS: Block[] = [
 
   { type: "h2", text: "Why does this site exist?" },
   { type: "answer", text: "Because products are starting to be used by AI agents, and most guidance on the topic is written for engineers. Agent Native explains the idea in plain language for builders and product managers, with sources, dates, and honest scoring." },
-  { type: "p", text: "It is also a working test. The site is built the way it recommends: one data file generates the pages, the Markdown versions, the llms.txt files, the structured data, and a small MCP server. See [how the site serves agents](/agents)." },
+  { type: "p", text: "Agent Native is the product-design companion to [AIOS](https://aios-site-pink.vercel.app/the-operating-model), Mark Hinkle's broader operating model and living field guide for enterprises, professionals, and builders becoming AI-native. AIOS defines how people and organizations become AI-native; Agent Native defines how software becomes usable by agents." },
+  { type: "p", text: "This site is also a working test. It is built the way it recommends: one data file generates the pages, the Markdown versions, the llms.txt files, the structured data, and a small MCP server. See [how the site serves agents](/agents)." },
 
   { type: "h2", text: "How do we source, score, and correct what we publish?" },
   { type: "ul", items: [
