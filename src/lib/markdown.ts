@@ -131,6 +131,9 @@ export function llmsTxt(): string {
 ## Related Field Guide
 - [AIOS operating model](${AIOS_COMPANION.operatingModel}): how enterprises, professionals, and builders become organized around AI.
 - [AIOS book and Appendix P](${AIOS_COMPANION.bookAppendix}): applies the Agent Native scorecard as product evidence inside the broader AIOS journey.
+
+## Network
+- [The AIE Network](${SITE.network.url}): newsletters, training, events, and field guides for professionals navigating the AI-native transition.
 `;
 }
 
