@@ -28,7 +28,7 @@ export function registerWebMcp(h: Handlers): () => void {
       inputSchema: t.inputSchema,
       annotations: { readOnlyHint: true },
       execute: async (args: unknown) => {
-        try { return { content: toolResult(t, args).content }; }
+        try { return { content: (await toolResult(t, args)).content }; }
         catch (e) { const r = errorResult(e); return { content: r.content, isError: true }; }
       },
     });

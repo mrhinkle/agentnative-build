@@ -96,7 +96,7 @@ export default function Home() {
       {/* ── SCORECARD (gray) ── */}
       <section id="score" className="content-gray py-16 md:py-24">
         <div className="container">
-          <SectionHeader label="05" title="How agent-native is your product?" description="Twelve yes-or-no questions, one point each. If a question does not apply (a read-only site has no writes, for example), leave it unchecked and score out of the questions that do. Nothing leaves your browser." />
+          <SectionHeader label="05" title="How agent-native is your product?" description="Twelve questions, one point per yes. Answer them yourself, probe a live site from outside, or hand the scorecard to your own agent and let it audit your product with evidence. Questions that do not apply drop out of the score." />
           <Scorecard />
         </div>
       </section>

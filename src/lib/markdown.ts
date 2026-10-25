@@ -1,6 +1,7 @@
+import { agentPrompt } from "./score";
 import {
   SITE, HOME, FUTURE, EXAMPLES, HOME_DEFINITION, HOME_DEFINITION_MORE, STAGES, PRINCIPLES, DEMO, ANATOMY,
-  SNIPPETS, SCORE_QUESTIONS, SCORE_TIERS, AVOID, TIMELINE, HOME_FAQ, FUTURE_LEDE, FUTURE_BLOCKS, FUTURE_FAQ,
+  SNIPPETS, SCORE_QUESTIONS, SCORE_TIERS, SCORE_CHECKS, AVOID, TIMELINE, HOME_FAQ, FUTURE_LEDE, FUTURE_BLOCKS, FUTURE_FAQ,
   FUTURE_SOURCES, FUTURE_SOURCES_NOTE, EXAMPLES_LEDE, PROJECTS, EXAMPLES_COMMON, EXAMPLES_FAQ,
   EXAMPLES_SCORE_BLOCKS, ABOUT, ABOUT_LEDE, ABOUT_BLOCKS, ABOUT_FAQ, AGENTS, AGENTS_LEDE, AGENTS_BLOCKS, AGENTS_FAQ, REFERENCE, REFERENCE_LEDE, REFERENCE_BLOCKS, REFERENCE_FAQ, REFERENCE_SOURCES, REFERENCE_SOURCES_NOTE, PMS, PMS_LEDE, PMS_BLOCKS, PMS_FAQ,
   type Block, type Faq,
@@ -37,7 +38,7 @@ export function homeMd(): string {
   s.push("## What are the principles of agent-native design?\n\n" + PRINCIPLES.map((p, i) => `${i + 1}. **${p.title}.** ${p.full}\n   - Bolted-on: ${p.bolted}\n   - Native: ${p.native}\n   - Ask your team: ${p.ask}`).join("\n"));
   s.push(`## Same task, three readers: "${DEMO.task}"\n\n` + DEMO.tabs.map((t) => `**${t.label}** (failure risk: ${t.risk}). ${t.verdict}\n` + t.steps.map((st, i) => `${i + 1}. ${st.t}${st.d ? ` (${st.d})` : ""}`).join("\n")).join("\n\n") + "\n\nIllustrative example, not a benchmark.");
   s.push("## What does an agent-native product look like?\n\n" + ANATOMY.map((a) => `${a.n}. **${a.name}**: ${a.text}`).join("\n") + "\n\nExample llms.txt:\n\n```\n" + SNIPPETS.llms + "\n```\n\nExample error an agent can act on:\n\n```json\n" + SNIPPETS.error + "\n```");
-  s.push("## How agent-native is your product? A 12-question scorecard\n\nOne point per yes. " + SCORE_TIERS.map((t, i) => `${i === 0 ? 0 : SCORE_TIERS[i - 1].max + 1}-${t.max}: ${t.name}`).join("; ") + ".\n\n" + SCORE_QUESTIONS.map((q, i) => `${i + 1}. ${q}`).join("\n"));
+  s.push("## How agent-native is your product? A 12-question scorecard\n\nOne point per yes. " + SCORE_TIERS.map((t, i) => `${i === 0 ? 0 : SCORE_TIERS[i - 1].max + 1}-${t.max}: ${t.name}`).join("; ") + ".\n\n" + SCORE_QUESTIONS.map((q, i) => `${i + 1}. ${q}`).join("\n") + "\n\nAn agent can run this scorecard on its own product: fetch [scorecard.json](" + SITE.url + "/scorecard.json) for how to verify each question, then send the answers to the `score_product` tool at " + SITE.url + "/api/mcp. [scorecard.md](" + SITE.url + "/scorecard.md) has a prompt to paste.");
   s.push("## Agent-washing: what to avoid\n\n" + AVOID.map((a) => `- **${a[0]}** ${a[1]}`).join("\n"));
   s.push("## How we got here\n\n" + TIMELINE.map((t) => `- **${t[0]}.** ${t[1]}`).join("\n"));
   s.push("## Go deeper\n\n- [The future of interfaces: MCP, MCP Apps, WebMCP, conversational UI](" + SITE.url + "/future)\n- [Agent-native product management: a guide for PMs](" + SITE.url + "/product-managers)\n- [Examples: ConferenceOS and Agent Kontrol, scored honestly](" + SITE.url + "/examples)");
@@ -124,6 +125,8 @@ export function llmsTxt(): string {
 
 ## Optional
 - [Full site as one file](${SITE.url}/llms-full.txt)
+- [Scorecard rubric for agents (JSON)](${SITE.url}/scorecard.json): twelve questions, how to verify each, fix for a miss
+- [Scorecard as a prompt (Markdown)](${SITE.url}/scorecard.md)
 - [MCP server (JSON-RPC over HTTP)](${SITE.url}/api/mcp)
 - [Sitemap](${SITE.url}/sitemap.xml)
 `;
@@ -133,4 +136,23 @@ export function llmsFullTxt(): string {
   const pages = ["/", "/future", "/examples", "/product-managers", "/agents", "/reference", "/about"];
   return `# ${SITE.name}: full site\n\n> The complete content of ${SITE.url} as one Markdown file. Index: ${SITE.url}/llms.txt\n\n` +
     pages.map((p) => markdownFor(p).trim()).join("\n\n---\n\n") + "\n";
+}
+
+/** The scorecard as data an agent can follow: /scorecard.json */
+export function scorecardJson(): string {
+  return JSON.stringify({
+    name: "Agent Native scorecard",
+    url: SITE.url + "/#score",
+    instructions: "Answer each question true only if the whole question is satisfied today, false if not, null if it does not apply. Cite evidence per answer. Send the answers to the score_product tool, or paste the JSON on the scorecard page.",
+    questions: SCORE_QUESTIONS.map((question, i) => ({ n: i + 1, question, principle: SCORE_CHECKS[i].principle, how_to_verify: SCORE_CHECKS[i].verify, fix_if_no: SCORE_CHECKS[i].fix })),
+    tiers: SCORE_TIERS.map((t, i) => ({ name: t.name, from: i === 0 ? 0 : SCORE_TIERS[i - 1].max + 1, to: t.max, advice: t.tip })),
+    submit: { mcp: SITE.url + "/api/mcp", tool: "score_product", arguments: { answers: "12 values: true | false | null", evidence: "optional, 12 strings" } },
+    probe: { endpoint: SITE.url + "/api/probe?url=https://example.com", answers: [2, 3, 6], note: "Only the questions visible from outside; the rest need source access." },
+  }, null, 2) + "\n";
+}
+
+/** The scorecard as a paste-ready prompt: /scorecard.md */
+export function scorecardMd(): string {
+  return `# Agent Native scorecard: run it on your own product\n\n${agentPrompt()}\n\n## The twelve questions\n\n` +
+    SCORE_QUESTIONS.map((q, i) => `${i + 1}. **${q}** (${SCORE_CHECKS[i].principle})\n   - Verify: ${SCORE_CHECKS[i].verify}\n   - If no: ${SCORE_CHECKS[i].fix}`).join("\n") + "\n";
 }

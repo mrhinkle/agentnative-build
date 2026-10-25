@@ -11,5 +11,5 @@ export function render(url: string): string {
 }
 
 export { PAGES, headHtml } from "@/lib/seo";
-export { markdownFor, llmsTxt, llmsFullTxt } from "@/lib/markdown";
+export { markdownFor, llmsTxt, llmsFullTxt, scorecardJson, scorecardMd } from "@/lib/markdown";
 export { SITE } from "@/lib/data";

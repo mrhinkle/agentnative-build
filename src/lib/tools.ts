@@ -2,7 +2,8 @@
  * tools.ts — the tool definitions shared by the WebMCP registration (browser) and the remote MCP
  * server (api/mcp.ts). Pure functions over data.ts; no DOM, no network.
  */
-import { HOME_DEFINITION, PRINCIPLES, SCORE_QUESTIONS, SCORE_TIERS, SITE } from "./data";
+import { HOME_DEFINITION, PRINCIPLES, SCORE_CHECKS, SCORE_QUESTIONS, SITE } from "./data";
+import { isAnswers, resultUrl, scoreAnswers } from "./score";
 import { markdownFor } from "./markdown";
 
 export const PAGE_PATHS = ["/", "/future", "/examples", "/product-managers", "/agents", "/reference", "/about"];
@@ -23,7 +24,7 @@ export interface ToolDef {
   title: string;
   description: string;
   inputSchema: Record<string, unknown>;
-  run: (args: any) => unknown;
+  run: (args: any) => unknown | Promise<unknown>;
 }
 
 const STOP = new Set(["the", "a", "an", "of", "to", "and", "is", "in", "for", "on", "what", "how", "does", "do"]);
@@ -58,26 +59,39 @@ export const TOOLS: ToolDef[] = [
     run: () => ({ principles: PRINCIPLES.map((p) => ({ name: p.title, summary: p.summary, detail: p.full, bolted_on: p.bolted, native: p.native })) }),
   },
   {
+    name: "get_scorecard",
+    title: "Get the agent-native scorecard rubric",
+    description: "Returns the twelve scorecard questions, how to verify each one in a codebase or running product, the fix for a miss, and the shape score_product expects. Read this first when you are asked to score a product.",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+    run: () => ({
+      instructions: "For each question, inspect the product and answer true only if the whole question is satisfied today, false if not, null if it does not apply. Cite evidence per answer, then call score_product.",
+      questions: SCORE_QUESTIONS.map((question, i) => ({ n: i + 1, question, principle: SCORE_CHECKS[i].principle, how_to_verify: SCORE_CHECKS[i].verify, fix_if_no: SCORE_CHECKS[i].fix })),
+      submit: { tool: "score_product", arguments: { answers: "array of 12 values: true | false | null", evidence: "optional array of 12 strings, one per answer" } },
+    }),
+  },
+  {
     name: "score_product",
     title: "Score a product against the 12-question agent-native scorecard",
-    description: "Takes twelve booleans (true = yes, in scorecard order) and returns the score out of 12, the tier, advice, and the questions that were answered no.",
+    description: "Takes twelve answers in scorecard order (true = yes, false = no, null = does not apply) and optional evidence strings. Returns the score, tier, per-principle breakdown, the gaps with a fix for each, and a shareable result_url. Call get_scorecard first for how to verify each question.",
     inputSchema: {
       type: "object",
-      properties: { answers: { type: "array", items: { type: "boolean" }, minItems: 12, maxItems: 12, description: "Twelve yes/no answers in scorecard order." } },
+      properties: {
+        answers: { type: "array", items: { type: ["boolean", "null"] }, minItems: 12, maxItems: 12, description: "Twelve answers in scorecard order: true, false, or null if the question does not apply." },
+        evidence: { type: "array", items: { type: "string" }, maxItems: 12, description: "Optional. One short note per answer: a file path, URL, or command." },
+      },
       required: ["answers"],
       additionalProperties: false,
     },
-    run: ({ answers }: { answers: unknown }) => {
-      if (!Array.isArray(answers) || answers.length !== SCORE_QUESTIONS.length || answers.some((a) => typeof a !== "boolean")) {
-        throw new ToolError("invalid_answers", `answers must be an array of ${SCORE_QUESTIONS.length} booleans`, `Send exactly ${SCORE_QUESTIONS.length} true/false values in scorecard order (call get_page with path "/" to read the questions).`);
+    run: ({ answers, evidence }: { answers: unknown; evidence?: unknown }) => {
+      if (!isAnswers(answers)) {
+        throw new ToolError("invalid_answers", `answers must be an array of ${SCORE_QUESTIONS.length} values, each true, false, or null`, `Send exactly ${SCORE_QUESTIONS.length} values in scorecard order. Call get_scorecard to read the questions.`);
       }
-      const score = (answers as boolean[]).filter(Boolean).length;
-      const tier = SCORE_TIERS.find((t) => score <= t.max)!;
-      return {
-        score, out_of: SCORE_QUESTIONS.length, tier: tier.name, advice: tier.tip,
-        gaps: SCORE_QUESTIONS.map((q, i) => ({ n: i + 1, question: q })).filter((_, i) => !(answers as boolean[])[i]),
-        questions: SCORE_QUESTIONS,
-      };
+      if (evidence !== undefined && (!Array.isArray(evidence) || evidence.some((e) => typeof e !== "string"))) {
+        throw new ToolError("invalid_evidence", "evidence must be an array of strings", "Send one short string per answer, or omit evidence.");
+      }
+      const result = scoreAnswers(answers);
+      if (!result.applicable) throw new ToolError("nothing_to_score", "Every answer is null, so there is nothing to score", "Answer at least one question with true or false.");
+      return { ...result, result_url: resultUrl(answers), evidence_received: Array.isArray(evidence) ? evidence.length : 0 };
     },
   },
   {
@@ -102,7 +116,7 @@ export const TOOLS: ToolDef[] = [
   },
 ];
 
-export const toolResult = (tool: ToolDef, args: unknown) => {
-  const data = tool.run(args ?? {});
+export const toolResult = async (tool: ToolDef, args: unknown) => {
+  const data = await tool.run(args ?? {});
   return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }], structuredContent: data };
 };

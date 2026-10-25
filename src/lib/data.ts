@@ -166,6 +166,24 @@ export const SCORE_TIERS = [
   { max: 12, name: "Agent-native", tip: "Agents are first-class users. Keep testing with real agents and watch the logs." },
 ];
 
+/** One entry per SCORE_QUESTIONS item, in order: the principle it measures, how an agent verifies it, and the fix for a miss. */
+export const SCORE_CHECKS: { principle: string; verify: string; fix: string }[] = [
+  { principle: "Parity", verify: "List the five most common user tasks. For each, find the API route, CLI command, or tool that does it without the UI. Yes only if all five exist.", fix: "Expose your top workflow as an API or tool, then make the button call it." },
+  { principle: "Legibility", verify: "Find an OpenAPI file, JSON Schema, or MCP tool list that covers the main workflows, and check that descriptions say when to use each call.", fix: "Publish an OpenAPI spec or MCP tool list with model-readable descriptions." },
+  { principle: "Legibility", verify: "Fetch /llms.txt and confirm it links to docs that load as Markdown without JavaScript.", fix: "Add /llms.txt and serve every docs page as Markdown." },
+  { principle: "Idempotent by default", verify: "Search write endpoints for an Idempotency-Key header or equivalent, and check that a repeated request returns the first result.", fix: "Accept an idempotency key on every write." },
+  { principle: "Idempotent by default", verify: "Find a dry_run, preview, or plan mode on delete, refund, send, and billing actions.", fix: "Add dry_run to destructive and costly calls." },
+  { principle: "Errors that teach", verify: "Trigger three failures (bad input, missing record, no permission). Yes only if each returns JSON with a code, a cause, and a suggested fix.", fix: "Return {code, cause, fix, retryable} instead of an HTML page or a bare message." },
+  { principle: "Scoped authority", verify: "Find a way to mint a scoped, expiring credential for an agent without a person clicking through each session.", fix: "Add delegated or service tokens with narrow scopes." },
+  { principle: "Scoped authority", verify: "Find per-agent spend, rate, or permission limits that an admin can set and that are enforced server-side.", fix: "Add per-identity limits and an approval gate for irreversible actions." },
+  { principle: "Verifiable", verify: "Run one write action and confirm it returns a receipt or an audit entry that an agent can query afterward.", fix: "Return a receipt per action and expose the audit log through the same interface." },
+  { principle: "Context-thrifty", verify: "Call a list endpoint and check for pagination, field selection, and a concise or Markdown response option.", fix: "Add pagination, a fields parameter, and a concise format." },
+  { principle: "Verifiable", verify: "Find an actor or source field on audit records that separates a human from an agent.", fix: "Record actor type on every action." },
+  { principle: "Verifiable", verify: "Find evals, CI jobs, or scripted agent runs that exercise the product's tools and fail the build on regression.", fix: "Add a small eval suite that runs an agent through your top five tasks." },
+];
+
+export const SCORE_PRINCIPLES = ["Parity", "Legibility", "Idempotent by default", "Errors that teach", "Scoped authority", "Verifiable", "Context-thrifty"];
+
 export const AVOID = [
   ["The corner chatbot", "that no other agent can call."],
   ["CAPTCHA walls", "in front of a legitimate workflow with no API behind them."],
@@ -442,20 +460,21 @@ export const AGENTS: PageMeta = {
 };
 
 export const AGENTS_LEDE =
-  "This site is built to be easy for agents to read and query, and it is honest about how far that goes. It exposes its content and a few tools through seven surfaces. It is a read-only content site, so it is agent-readable rather than fully agent-native: most of the scorecard measures what happens when an agent changes something, and this site changes nothing. Its own score is below.";
+  "This site is built to be easy for agents to read and query, and it is honest about how far that goes. It exposes its content and a few tools through eight surfaces. It is a read-only content site, so it is agent-readable rather than fully agent-native: most of the scorecard measures what happens when an agent changes something, and this site changes nothing. Its own score is below.";
 
 export const MCP_ENDPOINT = SITE.url + "/api/mcp";
 
 export const AGENTS_BLOCKS: Block[] = [
   { type: "h2", text: "What surfaces does this site expose to agents?" },
-  { type: "answer", text: "Seven: an llms.txt index, a single-file llms-full.txt, Markdown twins of every page, Markdown content negotiation on the normal URLs, a remote MCP server, WebMCP tools registered in the page, and JSON-LD structured data." },
+  { type: "answer", text: "Eight: an llms.txt index, a single-file llms-full.txt, Markdown twins of every page, Markdown content negotiation on the normal URLs, a remote MCP server, WebMCP tools registered in the page, a machine-readable scorecard rubric, and JSON-LD structured data." },
   { type: "table", head: ["Surface", "Where", "What an agent gets"], rows: [
     ["llms.txt", "/llms.txt", "A short index of pages, one line each"],
     ["llms-full.txt", "/llms-full.txt", "The whole site as one Markdown file, for a single fetch"],
     ["Markdown twins", "/index.md, /future.md, /examples.md, /product-managers.md, /agents.md, /reference.md, /about.md", "Each page as clean Markdown"],
     ["Content negotiation", "Any page with `Accept: text/markdown`", "The same URL, answered as Markdown"],
-    ["Remote MCP server", "/api/mcp", "Five read-only tools over JSON-RPC"],
+    ["Remote MCP server", "/api/mcp", "Seven read-only tools over JSON-RPC, including get_scorecard, score_product, and probe_site"],
     ["WebMCP tools", "In the page, via `navigator.modelContext`", "The same tools plus reader-view and navigation control, for browser agents"],
+    ["Scorecard rubric", "/scorecard.json, /scorecard.md", "The twelve questions, how to verify each in a codebase, and the fix for a miss, so an agent can score its own product"],
     ["Structured data", "JSON-LD in each page head", "Article, FAQPage, and BreadcrumbList"],
   ] },
 
@@ -464,11 +483,12 @@ export const AGENTS_BLOCKS: Block[] = [
   { type: "p", text: "Both are community conventions, not standards. Support from search engines and model providers is not confirmed, so treat them as a low-cost courtesy to agents and developer tools that do read them, not as a ranking lever." },
 
   { type: "h2", text: "Which WebMCP tools does this page register?" },
-  { type: "answer", text: "When the browser exposes the WebMCP API, the page registers seven tools. Five mirror the MCP server and two control the page itself. If the API is absent, nothing is registered and the page works as normal." },
+  { type: "answer", text: "When the browser exposes the WebMCP API, the page registers eight tools. Six mirror the MCP server and two control the page itself. If the API is absent, nothing is registered and the page works as normal." },
   { type: "ul", items: [
     "`get_definition`: the definition of agent-native software.",
     "`list_principles`: the eight design principles with bolted-on and native examples.",
-    "`score_product`: takes twelve yes or no answers and returns the score, tier, and the gaps to close.",
+    "`get_scorecard`: the twelve questions, how to verify each, and the fix for a miss.",
+    "`score_product`: takes twelve answers (yes, no, or not applicable) with optional evidence, and returns the score, tier, per-principle breakdown, the gaps to close, and a shareable result link.",
     "`get_page`: any page as Markdown.",
     "`search_site`: keyword search across every page.",
     "`set_reader_view`: switch the page between the human view and the agent view.",
@@ -481,11 +501,12 @@ export const AGENTS_BLOCKS: Block[] = [
   { type: "code", caption: "List the tools", text: `curl -s ${MCP_ENDPOINT} \
   -H 'content-type: application/json' \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'` },
-  { type: "code", caption: "Score a product (first four answers yes)", text: `curl -s ${MCP_ENDPOINT} \
+  { type: "answer", text: "To have an agent score its own product, call get_scorecard for the questions and how to verify each, inspect the product, then send the answers and evidence to score_product. The result includes a link a person can open on the home page." },
+  { type: "code", caption: "Score a product (first four answers yes, the last one not applicable)", text: `curl -s ${MCP_ENDPOINT} \
   -H 'content-type: application/json' \
   -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{
     "name":"score_product",
-    "arguments":{"answers":[true,true,true,true,false,false,false,false,false,false,false,false]}}}'` },
+    "arguments":{"answers":[true,true,true,true,false,false,false,false,false,false,false,null]}}}'` },
 
   { type: "h2", text: "How does Markdown content negotiation work?" },
   { type: "answer", text: "Request any page with an Accept header that prefers text/markdown and the server answers with the Markdown twin at the same URL. Browsers still get HTML." },
@@ -519,8 +540,8 @@ export const AGENTS_BLOCKS: Block[] = [
 
 export const AGENTS_FAQ: Faq[] = [
   { q: "What is llms-full.txt?", a: "A single Markdown file that contains the full content of a site, so an agent can load everything in one request. It is a community convention that complements the shorter llms.txt index." },
-  { q: "Does this site have an MCP server?", a: `Yes. A read-only remote MCP server runs at ${MCP_ENDPOINT} and exposes five tools: get_definition, list_principles, score_product, get_page, and search_site.` },
-  { q: "Does this site support WebMCP?", a: "Yes, when the browser exposes the WebMCP API. The page registers seven tools through navigator.modelContext and registers nothing otherwise." },
+  { q: "Does this site have an MCP server?", a: `Yes. A read-only remote MCP server runs at ${MCP_ENDPOINT} and exposes seven tools: get_definition, list_principles, get_scorecard, score_product, get_page, search_site, and probe_site.` },
+  { q: "Does this site support WebMCP?", a: "Yes, when the browser exposes the WebMCP API. The page registers eight tools through navigator.modelContext and registers nothing otherwise." },
 ];
 
 /* ───────────────────────── Reference ───────────────────────── */
