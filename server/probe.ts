@@ -100,7 +100,7 @@ const isMap = (v: unknown): v is Record<string, any> => v !== null && typeof v =
 export function isSpec(text: string): boolean {
   try {
     const j: any = JSON.parse(text);
-    return /^[23]\.\d+(\.\d+)?/.test(String(j?.openapi ?? j?.swagger ?? "")) && isMap(j.paths) && Object.keys(j.paths).some((k) => k.startsWith("/"));
+    return /^[23]\.\d+(\.\d+)?$/.test(String(j?.openapi ?? j?.swagger ?? "")) && isMap(j.paths) && Object.keys(j.paths).some((k) => k.startsWith("/"));
   } catch {
     // No YAML parser here, so accept only a strict subset: a versioned top-level key and at least one indented path entry under `paths:`.
     return /^(openapi|swagger):\s*["']?[23]\.\d+(\.\d+)?["']?\s*$/m.test(text) && /^paths:\s*\n[ \t]+["']?\/\S*["']?:/m.test(text);

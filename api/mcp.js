@@ -1114,7 +1114,7 @@ var isMap = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 function isSpec(text) {
   try {
     const j = JSON.parse(text);
-    return /^[23]\.\d+(\.\d+)?/.test(String(j?.openapi ?? j?.swagger ?? "")) && isMap(j.paths) && Object.keys(j.paths).some((k) => k.startsWith("/"));
+    return /^[23]\.\d+(\.\d+)?$/.test(String(j?.openapi ?? j?.swagger ?? "")) && isMap(j.paths) && Object.keys(j.paths).some((k) => k.startsWith("/"));
   } catch {
     return /^(openapi|swagger):\s*["']?[23]\.\d+(\.\d+)?["']?\s*$/m.test(text) && /^paths:\s*\n[ \t]+["']?\/\S*["']?:/m.test(text);
   }
