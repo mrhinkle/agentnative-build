@@ -3,6 +3,7 @@ import dns from "node:dns";
 import https from "node:https";
 import net from "node:net";
 var TIMEOUT_MS = 4e3;
+var DEADLINE_MS = 6e3;
 var MAX_BYTES = 64 * 1024;
 var CORS = { "access-control-allow-origin": "*", "access-control-allow-methods": "GET, OPTIONS" };
 var reply = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", "cache-control": "no-store", ...CORS } });
@@ -16,6 +17,11 @@ function privateIp(ip) {
   const low = ip.toLowerCase();
   const mapped = low.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
   if (mapped) return privateV4(mapped[1]);
+  const hex = low.match(/^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
+  if (hex) {
+    const a = parseInt(hex[1], 16), b = parseInt(hex[2], 16);
+    return privateV4(`${a >> 8}.${a & 255}.${b >> 8}.${b & 255}`);
+  }
   return low === "::" || low === "::1" || /^f[cd]/.test(low) || /^fe[89ab]/.test(low) || low.startsWith("ff");
 }
 var safeLookup = (hostname, opts, cb) => {
@@ -58,6 +64,8 @@ function get(host, path, init = {}) {
       }
     );
     req.on("timeout", () => req.destroy(new Error("timeout")));
+    const deadline = setTimeout(() => req.destroy(new Error("deadline")), DEADLINE_MS);
+    req.on("close", () => clearTimeout(deadline));
     req.on("error", reject);
     if (init.body) req.write(init.body);
     req.end();
@@ -78,6 +86,23 @@ async function fetchSame(host, path, init = {}) {
 }
 var bad = (r) => !r || r.status < 200 || r.status >= 300;
 var INIT = JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "agentnative-probe", version: "1.0.0" } } });
+function isSpec(text) {
+  try {
+    const j = JSON.parse(text);
+    return (typeof j?.openapi === "string" || typeof j?.swagger === "string") && j.paths !== null && typeof j.paths === "object";
+  } catch {
+    return /^(openapi|swagger):\s*["']?[23]/m.test(text) && /^paths:/m.test(text);
+  }
+}
+function isMcpInit(text) {
+  const body = text.trimStart().startsWith("{") ? text : text.split("\n").find((l) => l.startsWith("data:"))?.slice(5) ?? "";
+  try {
+    const j = JSON.parse(body);
+    return j?.jsonrpc === "2.0" && typeof j?.result?.protocolVersion === "string" && typeof j?.result?.serverInfo === "object";
+  } catch {
+    return false;
+  }
+}
 function parseTarget(input) {
   let u;
   try {
@@ -106,8 +131,8 @@ async function probeHost(host) {
   const llmsOk = !bad(llms) && !/html/i.test(llms.type) && /(^#|\]\()/m.test(llms.text);
   const markdown = !bad(md) && /markdown/i.test(md.type) || !bad(llmsFull) && !/html/i.test(llmsFull.type) && /(^#|\]\()/m.test(llmsFull.text) || llmsOk && /\.md\b/.test(llms.text);
   findings.push(llmsOk && markdown ? { n: 3, verdict: "yes", evidence: `/llms.txt found (${llms.status}) and Markdown is served (${!bad(md) && /markdown/i.test(md.type) ? "Accept: text/markdown" : !bad(llmsFull) ? "/llms-full.txt" : ".md links"}).` } : llmsOk ? { n: 3, verdict: "unknown", evidence: "/llms.txt found, but no Markdown version of the docs was detected. Confirm that docs load as plain Markdown." } : { n: 3, verdict: "no", evidence: llms ? `/llms.txt returned ${llms.status}${/html/i.test(llms.type) ? " as HTML" : ""}.` : "/llms.txt did not respond." });
-  const specAt = ["/openapi.json", "/openapi.yaml", "/.well-known/openapi.json", "/swagger.json"].find((_, i) => !bad(specs[i]) && /(openapi|swagger)["']?\s*[:=]/i.test(specs[i].text.slice(0, 2048)));
-  const mcpAt = ["/mcp", "/api/mcp", "/.well-known/mcp"].find((_, i) => !bad(mcps[i]) && /"jsonrpc"/.test(mcps[i].text) && /protocolVersion/.test(mcps[i].text));
+  const specAt = ["/openapi.json", "/openapi.yaml", "/.well-known/openapi.json", "/swagger.json"].find((_, i) => !bad(specs[i]) && isSpec(specs[i].text));
+  const mcpAt = ["/mcp", "/api/mcp", "/.well-known/mcp"].find((_, i) => !bad(mcps[i]) && isMcpInit(mcps[i].text));
   findings.push(specAt || mcpAt ? { n: 2, verdict: "yes", evidence: [specAt && `OpenAPI at ${specAt}`, mcpAt && `MCP server at ${mcpAt} answers initialize`].filter(Boolean).join("; ") + ". Confirm it covers the main workflows." } : { n: 2, verdict: "unknown", evidence: "No OpenAPI file or MCP server at the standard paths. If one exists elsewhere, answer yes yourself." });
   let q6 = { n: 6, verdict: "unknown", evidence: "No API error could be sampled from outside. Trigger a real failure and check it has a code, cause, and fix." };
   if (notFound && notFound.status >= 400) {
@@ -115,13 +140,13 @@ async function probeHost(host) {
       try {
         const j = JSON.parse(notFound.text);
         const o = j?.error && typeof j.error === "object" ? j.error : j;
-        const keys = Object.keys(o ?? {}).map((k) => k.toLowerCase());
-        const hasCode = keys.some((k) => ["code", "type", "error"].includes(k));
-        const hasFix = keys.some((k) => ["fix", "hint", "suggestion", "remediation", "retryable", "detail", "instance"].includes(k));
-        q6 = hasCode && hasFix ? { n: 6, verdict: "yes", evidence: `A missing API route returned JSON with ${keys.slice(0, 5).join(", ")}. Confirm real failures look the same.` } : { n: 6, verdict: "unknown", evidence: `A missing API route returned JSON (${keys.slice(0, 5).join(", ") || "no keys"}) without a suggested fix.` };
+        const keys = new Set(Object.keys(o && typeof o === "object" ? o : {}).map((k) => k.toLowerCase()));
+        const hasCode = ["code", "type"].some((k) => keys.has(k));
+        const hasFix = ["fix", "hint", "suggestion", "remediation", "how_to_fix", "retryable"].some((k) => keys.has(k));
+        q6 = hasCode && hasFix ? { n: 6, verdict: "yes", evidence: "A missing API route returned JSON with a code and a suggested fix. Confirm real failures look the same." } : { n: 6, verdict: "unknown", evidence: "A missing API route returned JSON without both a code and a suggested fix." };
       } catch {
       }
-    } else q6 = { n: 6, verdict: "unknown", evidence: `A missing API route returned ${notFound.status} as ${notFound.type.split(";")[0] || "an unknown type"}, not JSON. Check your real API routes.` };
+    } else q6 = { n: 6, verdict: "unknown", evidence: `A missing API route returned ${notFound.status} as ${/html/i.test(notFound.type) ? "HTML" : "a non-JSON type"}, not JSON. Check your real API routes.` };
   }
   findings.push(q6);
   return findings.sort((a, b) => a.n - b.n);
@@ -142,7 +167,7 @@ async function handleProbe(request, ip = "unknown") {
   if (!url) return err(400, "missing_url", "The url parameter is required.", "Send GET /api/probe?url=https://example.com.");
   const target = parseTarget(url);
   if ("error" in target) return err(400, "invalid_url", target.error, "Send a public https:// hostname, for example https://example.com.");
-  if (limited(ip)) return err(429, "rate_limited", "Too many probes from this address.", "Wait a minute and retry.", true);
+  if (limited(ip) || limited("global", 60)) return err(429, "rate_limited", "Too many probes from this address.", "Wait a minute and retry.", true);
   const findings = await probeHost(target.host);
   return reply({
     host: target.host,
@@ -152,12 +177,15 @@ async function handleProbe(request, ip = "unknown") {
 }
 var probe_default = {
   async fetch(request) {
-    return handleProbe(request, request.headers.get("x-forwarded-for")?.split(",")[0]?.trim());
+    const xff = request.headers.get("x-forwarded-for")?.split(",").map((v) => v.trim()).filter(Boolean);
+    return handleProbe(request, request.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim() || xff?.[xff.length - 1]);
   }
 };
 export {
   probe_default as default,
   handleProbe,
+  isMcpInit,
+  isSpec,
   limited,
   parseTarget,
   probeHost
