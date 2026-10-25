@@ -4,7 +4,7 @@ import {
   SNIPPETS, SCORE_QUESTIONS, SCORE_TIERS, SCORE_CHECKS, AVOID, TIMELINE, HOME_FAQ, FUTURE_LEDE, FUTURE_BLOCKS, FUTURE_FAQ,
   FUTURE_SOURCES, FUTURE_SOURCES_NOTE, EXAMPLES_LEDE, PROJECTS, EXAMPLES_COMMON, EXAMPLES_FAQ,
   EXAMPLES_SCORE_BLOCKS, ABOUT, ABOUT_LEDE, ABOUT_BLOCKS, ABOUT_FAQ, AGENTS, AGENTS_LEDE, AGENTS_BLOCKS, AGENTS_FAQ, REFERENCE, REFERENCE_LEDE, REFERENCE_BLOCKS, REFERENCE_FAQ, REFERENCE_SOURCES, REFERENCE_SOURCES_NOTE, PMS, PMS_LEDE, PMS_BLOCKS, PMS_FAQ,
-  type Block, type Faq,
+  AIOS_COMPANION, type Block, type Faq,
 } from "./data";
 
 const table = (head: string[], rows: string[][]) =>
@@ -39,6 +39,7 @@ export function homeMd(): string {
   s.push(`## Same task, three readers: "${DEMO.task}"\n\n` + DEMO.tabs.map((t) => `**${t.label}** (failure risk: ${t.risk}). ${t.verdict}\n` + t.steps.map((st, i) => `${i + 1}. ${st.t}${st.d ? ` (${st.d})` : ""}`).join("\n")).join("\n\n") + "\n\nIllustrative example, not a benchmark.");
   s.push("## What does an agent-native product look like?\n\n" + ANATOMY.map((a) => `${a.n}. **${a.name}**: ${a.text}`).join("\n") + "\n\nExample llms.txt:\n\n```\n" + SNIPPETS.llms + "\n```\n\nExample error an agent can act on:\n\n```json\n" + SNIPPETS.error + "\n```");
   s.push("## How agent-native is your product? A 12-question scorecard\n\nOne point per yes. " + SCORE_TIERS.map((t, i) => `${i === 0 ? 0 : SCORE_TIERS[i - 1].max + 1}-${t.max}: ${t.name}`).join("; ") + ".\n\n" + SCORE_QUESTIONS.map((q, i) => `${i + 1}. ${q}`).join("\n") + "\n\nAn agent can run this scorecard on its own product: fetch [scorecard.json](" + SITE.url + "/scorecard.json) for how to verify each question, then send the answers to the `score_product` tool at " + SITE.url + "/api/mcp. [scorecard.md](" + SITE.url + "/scorecard.md) has a prompt to paste.");
+  s.push(`## How this fits AIOS\n\nAIOS defines how people and organizations become AI-native. Agent Native defines how software becomes usable by agents. The product scorecard is used in [Appendix P of the AIOS book](${AIOS_COMPANION.bookAppendix}) as evidence for one named product surface; it is not a second maturity ladder or a certification. [Explore the AIOS operating model](${AIOS_COMPANION.operatingModel}).`);
   s.push("## Agent-washing: what to avoid\n\n" + AVOID.map((a) => `- **${a[0]}** ${a[1]}`).join("\n"));
   s.push("## How we got here\n\n" + TIMELINE.map((t) => `- **${t[0]}.** ${t[1]}`).join("\n"));
   s.push("## Go deeper\n\n- [The future of interfaces: MCP, MCP Apps, WebMCP, conversational UI](" + SITE.url + "/future)\n- [Agent-native product management: a guide for PMs](" + SITE.url + "/product-managers)\n- [Examples: ConferenceOS and Agent Kontrol, scored honestly](" + SITE.url + "/examples)");
@@ -129,6 +130,13 @@ export function llmsTxt(): string {
 - [Scorecard as a prompt (Markdown)](${SITE.url}/scorecard.md)
 - [MCP server (JSON-RPC over HTTP)](${SITE.url}/api/mcp)
 - [Sitemap](${SITE.url}/sitemap.xml)
+
+## Related Field Guide
+- [AIOS operating model](${AIOS_COMPANION.operatingModel}): how enterprises, professionals, and builders become organized around AI.
+- [AIOS book and Appendix P](${AIOS_COMPANION.bookAppendix}): applies the Agent Native scorecard as product evidence inside the broader AIOS journey.
+
+## Network
+- [The AIE Network](${SITE.network.url}): newsletters, training, events, and field guides for professionals navigating the AI-native transition.
 `;
 }
 

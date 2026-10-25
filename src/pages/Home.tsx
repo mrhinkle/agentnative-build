@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import { ArrowRight } from "lucide-react";
 import {
-  HOME, HOME_DEFINITION, HOME_DEFINITION_MORE, STAGES, ANATOMY, SNIPPETS, AVOID, TIMELINE, HOME_FAQ,
+  HOME, HOME_DEFINITION, HOME_DEFINITION_MORE, STAGES, ANATOMY, SNIPPETS, AVOID, TIMELINE, HOME_FAQ, AIOS_COMPANION,
 } from "@/lib/data";
 import SectionHeader from "@/components/SectionHeader";
 import HeroNetwork from "@/components/HeroNetwork";
@@ -98,6 +98,15 @@ export default function Home() {
         <div className="container">
           <SectionHeader label="05" title="How agent-native is your product?" description="Twelve questions, one point per yes. Answer them yourself, probe a live site from outside, or hand the scorecard to your own agent and let it audit your product with evidence. Questions that do not apply drop out of the score." />
           <Scorecard />
+          <aside className="mt-10 rounded-xl border border-[#0A0F1C]/10 bg-white p-6 md:p-8">
+            <p className="label-mono text-[#f44800] mb-3">How this fits the larger operating model</p>
+            <h3 className="font-heading text-xl md:text-2xl font-bold text-[#0A0F1C]">AIOS defines how people and organizations become AI-native. Agent Native defines how software becomes usable by agents.</h3>
+            <p className="mt-3 text-[#0A0F1C]/65 leading-relaxed">The scorecard tests one product surface. The AIOS book uses it in Appendix P as evidence for builders deciding whether that surface is ready for agent use. It does not replace the AIOS maturity ladder; it answers a narrower question.</p>
+            <div className="mt-5 flex flex-wrap gap-4">
+              <a href={AIOS_COMPANION.bookAppendix} className="inline-flex items-center gap-2 text-sm font-semibold text-[#2563EB] hover:gap-3 transition-all">See Appendix P in the AIOS book <ArrowRight className="w-4 h-4" /></a>
+              <a href={AIOS_COMPANION.operatingModel} className="inline-flex items-center gap-2 text-sm font-semibold text-[#0A0F1C]/60 hover:text-[#0A0F1C] transition-colors">Explore the AIOS operating model <ArrowRight className="w-4 h-4" /></a>
+            </div>
+          </aside>
         </div>
       </section>
 
