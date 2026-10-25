@@ -86,19 +86,20 @@ async function fetchSame(host, path, init = {}) {
 }
 var bad = (r) => !r || r.status < 200 || r.status >= 300;
 var INIT = JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "agentnative-probe", version: "1.0.0" } } });
+var isMap = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 function isSpec(text) {
   try {
     const j = JSON.parse(text);
-    return (typeof j?.openapi === "string" || typeof j?.swagger === "string") && j.paths !== null && typeof j.paths === "object";
+    return /^[23]\.\d+(\.\d+)?/.test(String(j?.openapi ?? j?.swagger ?? "")) && isMap(j.paths) && Object.keys(j.paths).some((k) => k.startsWith("/"));
   } catch {
-    return /^(openapi|swagger):\s*["']?[23]/m.test(text) && /^paths:/m.test(text);
+    return /^(openapi|swagger):\s*["']?[23]\.\d+(\.\d+)?["']?\s*$/m.test(text) && /^paths:\s*\n[ \t]+["']?\/\S*["']?:/m.test(text);
   }
 }
 function isMcpInit(text) {
   const body = text.trimStart().startsWith("{") ? text : text.split("\n").find((l) => l.startsWith("data:"))?.slice(5) ?? "";
   try {
     const j = JSON.parse(body);
-    return j?.jsonrpc === "2.0" && typeof j?.result?.protocolVersion === "string" && typeof j?.result?.serverInfo === "object";
+    return j?.jsonrpc === "2.0" && isMap(j.result) && typeof j.result.protocolVersion === "string" && isMap(j.result.serverInfo) && typeof j.result.serverInfo.name === "string";
   } catch {
     return false;
   }
@@ -142,7 +143,7 @@ async function probeHost(host) {
         const o = j?.error && typeof j.error === "object" ? j.error : j;
         const keys = new Set(Object.keys(o && typeof o === "object" ? o : {}).map((k) => k.toLowerCase()));
         const hasCode = ["code", "type"].some((k) => keys.has(k));
-        const hasFix = ["fix", "hint", "suggestion", "remediation", "how_to_fix", "retryable"].some((k) => keys.has(k));
+        const hasFix = ["fix", "hint", "suggestion", "remediation", "how_to_fix"].some((k) => keys.has(k));
         q6 = hasCode && hasFix ? { n: 6, verdict: "yes", evidence: "A missing API route returned JSON with a code and a suggested fix. Confirm real failures look the same." } : { n: 6, verdict: "unknown", evidence: "A missing API route returned JSON without both a code and a suggested fix." };
       } catch {
       }
