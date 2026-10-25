@@ -37,7 +37,9 @@ for (const [route, file, md] of routes) {
   if (/open-source/i.test(text)) fail('"open-source" hyphenated; the style is "open source"');
   if (html.includes("Loading")) fail("placeholder text present");
 }
-for (const f of ["llms.txt", "llms-full.txt", "sitemap.xml", "robots.txt", "404.html"]) if (!fs.existsSync(path.join(dist, f))) fail(`missing ${f}`);
+for (const f of ["llms.txt", "llms-full.txt", "scorecard.json", "scorecard.md", "sitemap.xml", "robots.txt", "404.html"]) if (!fs.existsSync(path.join(dist, f))) fail(`missing ${f}`);
+
+try { const sc = JSON.parse(fs.readFileSync(path.join(dist, "scorecard.json"), "utf8")); if (sc.questions?.length !== 12 || sc.questions.some((q) => !q.how_to_verify || !q.fix_if_no)) fail("scorecard.json must have 12 questions, each with how_to_verify and fix_if_no"); } catch { fail("scorecard.json missing or invalid"); }
 
 if (failures) { console.error(`\n${failures} validation failure(s)`); process.exit(1); }
 console.log("\nvalidate-site: all checks passed");

@@ -123,6 +123,21 @@ var SCORE_TIERS = [
   { max: 9, name: "Agent-ready", tip: "Good bones. Close the gaps in authority and verification: scopes, limits, receipts." },
   { max: 12, name: "Agent-native", tip: "Agents are first-class users. Keep testing with real agents and watch the logs." }
 ];
+var SCORE_CHECKS = [
+  { principle: "Parity", verify: "List the five most common user tasks. For each, find the API route, CLI command, or tool that does it without the UI. Yes only if all five exist.", fix: "Expose your top workflow as an API or tool, then make the button call it." },
+  { principle: "Legibility", verify: "Find an OpenAPI file, JSON Schema, or MCP tool list that covers the main workflows, and check that descriptions say when to use each call.", fix: "Publish an OpenAPI spec or MCP tool list with model-readable descriptions." },
+  { principle: "Legibility", verify: "Fetch /llms.txt and confirm it links to docs that load as Markdown without JavaScript.", fix: "Add /llms.txt and serve every docs page as Markdown." },
+  { principle: "Idempotent by default", verify: "Search write endpoints for an Idempotency-Key header or equivalent, and check that a repeated request returns the first result.", fix: "Accept an idempotency key on every write." },
+  { principle: "Idempotent by default", verify: "Find a dry_run, preview, or plan mode on delete, refund, send, and billing actions.", fix: "Add dry_run to destructive and costly calls." },
+  { principle: "Errors that teach", verify: "Trigger three failures (bad input, missing record, no permission). Yes only if each returns JSON with a code, a cause, and a suggested fix.", fix: "Return {code, cause, fix, retryable} instead of an HTML page or a bare message." },
+  { principle: "Scoped authority", verify: "Find a way to mint a scoped, expiring credential for an agent without a person clicking through each session.", fix: "Add delegated or service tokens with narrow scopes." },
+  { principle: "Scoped authority", verify: "Find per-agent spend, rate, or permission limits that an admin can set and that are enforced server-side.", fix: "Add per-identity limits and an approval gate for irreversible actions." },
+  { principle: "Verifiable", verify: "Run one write action and confirm it returns a receipt or an audit entry that an agent can query afterward.", fix: "Return a receipt per action and expose the audit log through the same interface." },
+  { principle: "Context-thrifty", verify: "Call a list endpoint and check for pagination, field selection, and a concise or Markdown response option.", fix: "Add pagination, a fields parameter, and a concise format." },
+  { principle: "Verifiable", verify: "Find an actor or source field on audit records that separates a human from an agent.", fix: "Record actor type on every action." },
+  { principle: "Verifiable", verify: "Find evals, CI jobs, or scripted agent runs that exercise the product's tools and fail the build on regression.", fix: "Add a small eval suite that runs an agent through your top five tasks." }
+];
+var SCORE_PRINCIPLES = ["Parity", "Legibility", "Idempotent by default", "Errors that teach", "Scoped authority", "Verifiable", "Context-thrifty"];
 var AVOID = [
   ["The corner chatbot", "that no other agent can call."],
   ["CAPTCHA walls", "in front of a legitimate workflow with no API behind them."],
@@ -352,29 +367,31 @@ var AGENTS = {
   crumb: "For agents",
   md: "/agents.md"
 };
-var AGENTS_LEDE = "This site is built to be easy for agents to read and query, and it is honest about how far that goes. It exposes its content and a few tools through seven surfaces. It is a read-only content site, so it is agent-readable rather than fully agent-native: most of the scorecard measures what happens when an agent changes something, and this site changes nothing. Its own score is below.";
+var AGENTS_LEDE = "This site is built to be easy for agents to read and query, and it is honest about how far that goes. It exposes its content and a few tools through eight surfaces. It is a read-only content site, so it is agent-readable rather than fully agent-native: most of the scorecard measures what happens when an agent changes something, and this site changes nothing. Its own score is below.";
 var MCP_ENDPOINT = SITE.url + "/api/mcp";
 var AGENTS_BLOCKS = [
   { type: "h2", text: "What surfaces does this site expose to agents?" },
-  { type: "answer", text: "Seven: an llms.txt index, a single-file llms-full.txt, Markdown twins of every page, Markdown content negotiation on the normal URLs, a remote MCP server, WebMCP tools registered in the page, and JSON-LD structured data." },
+  { type: "answer", text: "Eight: an llms.txt index, a single-file llms-full.txt, Markdown twins of every page, Markdown content negotiation on the normal URLs, a remote MCP server, WebMCP tools registered in the page, a machine-readable scorecard rubric, and JSON-LD structured data." },
   { type: "table", head: ["Surface", "Where", "What an agent gets"], rows: [
     ["llms.txt", "/llms.txt", "A short index of pages, one line each"],
     ["llms-full.txt", "/llms-full.txt", "The whole site as one Markdown file, for a single fetch"],
     ["Markdown twins", "/index.md, /future.md, /examples.md, /product-managers.md, /agents.md, /reference.md, /about.md", "Each page as clean Markdown"],
     ["Content negotiation", "Any page with `Accept: text/markdown`", "The same URL, answered as Markdown"],
-    ["Remote MCP server", "/api/mcp", "Five read-only tools over JSON-RPC"],
+    ["Remote MCP server", "/api/mcp", "Seven read-only tools over JSON-RPC, including get_scorecard, score_product, and probe_site"],
     ["WebMCP tools", "In the page, via `navigator.modelContext`", "The same tools plus reader-view and navigation control, for browser agents"],
+    ["Scorecard rubric", "/scorecard.json, /scorecard.md", "The twelve questions, how to verify each in a codebase, and the fix for a miss, so an agent can score its own product"],
     ["Structured data", "JSON-LD in each page head", "Article, FAQPage, and BreadcrumbList"]
   ] },
   { type: "h2", text: "What is the difference between llms.txt and llms-full.txt?" },
   { type: "answer", text: "llms.txt is a short Markdown index that tells a model which pages exist and where to find clean versions. llms-full.txt carries the full content inline, so an agent can load the entire site in one request." },
   { type: "p", text: "Both are community conventions, not standards. Support from search engines and model providers is not confirmed, so treat them as a low-cost courtesy to agents and developer tools that do read them, not as a ranking lever." },
   { type: "h2", text: "Which WebMCP tools does this page register?" },
-  { type: "answer", text: "When the browser exposes the WebMCP API, the page registers seven tools. Five mirror the MCP server and two control the page itself. If the API is absent, nothing is registered and the page works as normal." },
+  { type: "answer", text: "When the browser exposes the WebMCP API, the page registers eight tools. Six mirror the MCP server and two control the page itself. If the API is absent, nothing is registered and the page works as normal." },
   { type: "ul", items: [
     "`get_definition`: the definition of agent-native software.",
     "`list_principles`: the eight design principles with bolted-on and native examples.",
-    "`score_product`: takes twelve yes or no answers and returns the score, tier, and the gaps to close.",
+    "`get_scorecard`: the twelve questions, how to verify each, and the fix for a miss.",
+    "`score_product`: takes twelve answers (yes, no, or not applicable) with optional evidence, and returns the score, tier, per-principle breakdown, the gaps to close, and a shareable result link.",
     "`get_page`: any page as Markdown.",
     "`search_site`: keyword search across every page.",
     "`set_reader_view`: switch the page between the human view and the agent view.",
@@ -384,9 +401,10 @@ var AGENTS_BLOCKS = [
   { type: "h2", text: "How do I call the MCP server?" },
   { type: "answer", text: `Send JSON-RPC 2.0 over HTTP POST to ${MCP_ENDPOINT}. Every request is self-contained: there is no session, and no handshake is required before calling a tool.` },
   { type: "code", caption: "List the tools", text: `curl -s ${MCP_ENDPOINT}   -H 'content-type: application/json'   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'` },
-  { type: "code", caption: "Score a product (first four answers yes)", text: `curl -s ${MCP_ENDPOINT}   -H 'content-type: application/json'   -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{
+  { type: "answer", text: "To have an agent score its own product, call get_scorecard for the questions and how to verify each, inspect the product, then send the answers and evidence to score_product. The result includes a link a person can open on the home page." },
+  { type: "code", caption: "Score a product (first four answers yes, the last one not applicable)", text: `curl -s ${MCP_ENDPOINT}   -H 'content-type: application/json'   -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{
     "name":"score_product",
-    "arguments":{"answers":[true,true,true,true,false,false,false,false,false,false,false,false]}}}'` },
+    "arguments":{"answers":[true,true,true,true,false,false,false,false,false,false,false,null]}}}'` },
   { type: "h2", text: "How does Markdown content negotiation work?" },
   { type: "answer", text: "Request any page with an Accept header that prefers text/markdown and the server answers with the Markdown twin at the same URL. Browsers still get HTML." },
   { type: "code", caption: "Same URL, different representation", text: `curl -s -H 'Accept: text/markdown' ${SITE.url}/future` },
@@ -416,8 +434,8 @@ var AGENTS_BLOCKS = [
 ];
 var AGENTS_FAQ = [
   { q: "What is llms-full.txt?", a: "A single Markdown file that contains the full content of a site, so an agent can load everything in one request. It is a community convention that complements the shorter llms.txt index." },
-  { q: "Does this site have an MCP server?", a: `Yes. A read-only remote MCP server runs at ${MCP_ENDPOINT} and exposes five tools: get_definition, list_principles, score_product, get_page, and search_site.` },
-  { q: "Does this site support WebMCP?", a: "Yes, when the browser exposes the WebMCP API. The page registers seven tools through navigator.modelContext and registers nothing otherwise." }
+  { q: "Does this site have an MCP server?", a: `Yes. A read-only remote MCP server runs at ${MCP_ENDPOINT} and exposes seven tools: get_definition, list_principles, get_scorecard, score_product, get_page, search_site, and probe_site.` },
+  { q: "Does this site support WebMCP?", a: "Yes, when the browser exposes the WebMCP API. The page registers eight tools through navigator.modelContext and registers nothing otherwise." }
 ];
 var REFERENCE = {
   path: "/reference",
@@ -757,6 +775,23 @@ var ABOUT_FAQ = [
   { q: "Does Agent Native review its own products fairly?", a: "ConferenceOS and Agent Kontrol are products we build, so the examples are first-party accounts. They are scored with the same strict scorecard as everything else, and the gaps are published." }
 ];
 
+// src/lib/score.ts
+var isAnswers = (a) => Array.isArray(a) && a.length === SCORE_QUESTIONS.length && a.every((v) => v === true || v === false || v === null);
+function scoreAnswers(answers) {
+  const applicable = answers.filter((a) => a !== null).length;
+  const score = answers.filter((a) => a === true).length;
+  const scaled = applicable ? Math.round(score / applicable * SCORE_QUESTIONS.length) : 0;
+  const tier = SCORE_TIERS.find((t) => scaled <= t.max);
+  const principles = SCORE_PRINCIPLES.map((name) => {
+    const idx = SCORE_CHECKS.flatMap((c, i) => c.principle === name && answers[i] !== null ? [i] : []);
+    return { name, yes: idx.filter((i) => answers[i] === true).length, total: idx.length };
+  });
+  const gaps = SCORE_QUESTIONS.flatMap((question, i) => answers[i] === false ? [{ n: i + 1, question, principle: SCORE_CHECKS[i].principle, fix: SCORE_CHECKS[i].fix }] : []);
+  return { score, applicable, out_of: SCORE_QUESTIONS.length, scaled, tier: tier.name, advice: tier.tip, principles, gaps };
+}
+var encodeAnswers = (a) => a.map((v) => v === true ? "y" : v === false ? "n" : "x").join("");
+var resultUrl = (a) => `${SITE.url}/?r=${encodeAnswers(a)}#score`;
+
 // src/lib/markdown.ts
 var table = (head2, rows) => [`| ${head2.join(" | ")} |`, `|${head2.map(() => "---").join("|")}|`, ...rows.map((r) => `| ${r.join(" | ")} |`)].join("\n");
 function blocksMd(blocks) {
@@ -806,7 +841,7 @@ function homeMd() {
 ` + DEMO.tabs.map((t) => `**${t.label}** (failure risk: ${t.risk}). ${t.verdict}
 ` + t.steps.map((st, i) => `${i + 1}. ${st.t}${st.d ? ` (${st.d})` : ""}`).join("\n")).join("\n\n") + "\n\nIllustrative example, not a benchmark.");
   s.push("## What does an agent-native product look like?\n\n" + ANATOMY.map((a) => `${a.n}. **${a.name}**: ${a.text}`).join("\n") + "\n\nExample llms.txt:\n\n```\n" + SNIPPETS.llms + "\n```\n\nExample error an agent can act on:\n\n```json\n" + SNIPPETS.error + "\n```");
-  s.push("## How agent-native is your product? A 12-question scorecard\n\nOne point per yes. " + SCORE_TIERS.map((t, i) => `${i === 0 ? 0 : SCORE_TIERS[i - 1].max + 1}-${t.max}: ${t.name}`).join("; ") + ".\n\n" + SCORE_QUESTIONS.map((q, i) => `${i + 1}. ${q}`).join("\n"));
+  s.push("## How agent-native is your product? A 12-question scorecard\n\nOne point per yes. " + SCORE_TIERS.map((t, i) => `${i === 0 ? 0 : SCORE_TIERS[i - 1].max + 1}-${t.max}: ${t.name}`).join("; ") + ".\n\n" + SCORE_QUESTIONS.map((q, i) => `${i + 1}. ${q}`).join("\n") + "\n\nAn agent can run this scorecard on its own product: fetch [scorecard.json](" + SITE.url + "/scorecard.json) for how to verify each question, then send the answers to the `score_product` tool at " + SITE.url + "/api/mcp. [scorecard.md](" + SITE.url + "/scorecard.md) has a prompt to paste.");
   s.push(`## How this fits AIOS
 
 AIOS defines how people and organizations become AI-native. Agent Native defines how software becomes usable by agents. The product scorecard is used in [Appendix P of the AIOS book](${AIOS_COMPANION.bookAppendix}) as evidence for one named product surface; it is not a second maturity ladder or a certification. [Explore the AIOS operating model](${AIOS_COMPANION.operatingModel}).`);
@@ -911,15 +946,15 @@ var STOP = /* @__PURE__ */ new Set(["the", "a", "an", "of", "to", "and", "is", "
 function search(query) {
   const terms = query.toLowerCase().split(/\W+/).filter((t) => t && !STOP.has(t));
   if (!terms.length) return [];
-  const hits = [];
+  const hits2 = [];
   for (const path of PAGE_PATHS) {
     for (const para of markdownFor(path).split(/\n{2,}/)) {
       const low = para.toLowerCase();
       const score = terms.reduce((n, t) => n + (low.includes(t) ? 1 : 0), 0);
-      if (score > 0) hits.push({ path, score, snippet: para.replace(/\s+/g, " ").slice(0, 300) });
+      if (score > 0) hits2.push({ path, score, snippet: para.replace(/\s+/g, " ").slice(0, 300) });
     }
   }
-  return hits.sort((a, b) => b.score - a.score).slice(0, 5);
+  return hits2.sort((a, b) => b.score - a.score).slice(0, 5);
 }
 var TOOLS = [
   {
@@ -937,29 +972,39 @@ var TOOLS = [
     run: () => ({ principles: PRINCIPLES.map((p) => ({ name: p.title, summary: p.summary, detail: p.full, bolted_on: p.bolted, native: p.native })) })
   },
   {
+    name: "get_scorecard",
+    title: "Get the agent-native scorecard rubric",
+    description: "Returns the twelve scorecard questions, how to verify each one in a codebase or running product, the fix for a miss, and the shape score_product expects. Read this first when you are asked to score a product.",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+    run: () => ({
+      instructions: "For each question, inspect the product and answer true only if the whole question is satisfied today, false if not, null if it does not apply. Cite evidence per answer, then call score_product.",
+      questions: SCORE_QUESTIONS.map((question, i) => ({ n: i + 1, question, principle: SCORE_CHECKS[i].principle, how_to_verify: SCORE_CHECKS[i].verify, fix_if_no: SCORE_CHECKS[i].fix })),
+      submit: { tool: "score_product", arguments: { answers: "array of 12 values: true | false | null", evidence: "optional array of 12 strings, one per answer" } }
+    })
+  },
+  {
     name: "score_product",
     title: "Score a product against the 12-question agent-native scorecard",
-    description: "Takes twelve booleans (true = yes, in scorecard order) and returns the score out of 12, the tier, advice, and the questions that were answered no.",
+    description: "Takes twelve answers in scorecard order (true = yes, false = no, null = does not apply) and optional evidence strings. Returns the score, tier, per-principle breakdown, the gaps with a fix for each, and a shareable result_url. Call get_scorecard first for how to verify each question.",
     inputSchema: {
       type: "object",
-      properties: { answers: { type: "array", items: { type: "boolean" }, minItems: 12, maxItems: 12, description: "Twelve yes/no answers in scorecard order." } },
+      properties: {
+        answers: { type: "array", items: { type: ["boolean", "null"] }, minItems: 12, maxItems: 12, description: "Twelve answers in scorecard order: true, false, or null if the question does not apply." },
+        evidence: { type: "array", items: { type: "string" }, maxItems: 12, description: "Optional. One short note per answer: a file path, URL, or command." }
+      },
       required: ["answers"],
       additionalProperties: false
     },
-    run: ({ answers }) => {
-      if (!Array.isArray(answers) || answers.length !== SCORE_QUESTIONS.length || answers.some((a) => typeof a !== "boolean")) {
-        throw new ToolError("invalid_answers", `answers must be an array of ${SCORE_QUESTIONS.length} booleans`, `Send exactly ${SCORE_QUESTIONS.length} true/false values in scorecard order (call get_page with path "/" to read the questions).`);
+    run: ({ answers, evidence }) => {
+      if (!isAnswers(answers)) {
+        throw new ToolError("invalid_answers", `answers must be an array of ${SCORE_QUESTIONS.length} values, each true, false, or null`, `Send exactly ${SCORE_QUESTIONS.length} values in scorecard order. Call get_scorecard to read the questions.`);
       }
-      const score = answers.filter(Boolean).length;
-      const tier = SCORE_TIERS.find((t) => score <= t.max);
-      return {
-        score,
-        out_of: SCORE_QUESTIONS.length,
-        tier: tier.name,
-        advice: tier.tip,
-        gaps: SCORE_QUESTIONS.map((q, i) => ({ n: i + 1, question: q })).filter((_, i) => !answers[i]),
-        questions: SCORE_QUESTIONS
-      };
+      if (evidence !== void 0 && (!Array.isArray(evidence) || evidence.some((e) => typeof e !== "string"))) {
+        throw new ToolError("invalid_evidence", "evidence must be an array of strings", "Send one short string per answer, or omit evidence.");
+      }
+      const result = scoreAnswers(answers);
+      if (!result.applicable) throw new ToolError("nothing_to_score", "Every answer is null, so there is nothing to score", "Answer at least one question with true or false.");
+      return { ...result, result_url: resultUrl(answers), evidence_received: Array.isArray(evidence) ? evidence.length : 0 };
     }
   },
   {
@@ -983,12 +1028,186 @@ var TOOLS = [
     }
   }
 ];
-var toolResult = (tool, args) => {
-  const data = tool.run(args ?? {});
+var toolResult = async (tool, args) => {
+  const data = await tool.run(args ?? {});
   return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }], structuredContent: data };
 };
 
+// server/probe.ts
+import dns from "node:dns";
+import https from "node:https";
+import net from "node:net";
+var TIMEOUT_MS = 4e3;
+var DEADLINE_MS = 6e3;
+var MAX_BYTES = 64 * 1024;
+function privateV4(ip) {
+  const [a, b] = ip.split(".").map(Number);
+  return a === 0 || a === 10 || a === 127 || a >= 224 || a === 100 && b >= 64 && b <= 127 || a === 169 && b === 254 || a === 172 && b >= 16 && b <= 31 || a === 192 && (b === 168 || b === 0 && ip.startsWith("192.0.0.")) || a === 198 && (b === 18 || b === 19);
+}
+function privateIp(ip) {
+  if (net.isIPv4(ip)) return privateV4(ip);
+  const low = ip.toLowerCase();
+  const mapped = low.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+  if (mapped) return privateV4(mapped[1]);
+  const hex = low.match(/^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
+  if (hex) {
+    const a = parseInt(hex[1], 16), b = parseInt(hex[2], 16);
+    return privateV4(`${a >> 8}.${a & 255}.${b >> 8}.${b & 255}`);
+  }
+  return low === "::" || low === "::1" || /^f[cd]/.test(low) || /^fe[89ab]/.test(low) || low.startsWith("ff");
+}
+var safeLookup = (hostname, opts, cb) => {
+  dns.lookup(hostname, { all: true }, (e, addrs) => {
+    if (e) return cb(e);
+    if (!addrs.length || addrs.some((a) => privateIp(a.address))) return cb(new Error("blocked_address"));
+    if (opts?.all) return cb(null, addrs);
+    cb(null, addrs[0].address, addrs[0].family);
+  });
+};
+function get(host, path, init = {}) {
+  return new Promise((resolve, reject) => {
+    const req = https.request(
+      {
+        host,
+        port: 443,
+        path,
+        method: init.method ?? "GET",
+        lookup: safeLookup,
+        agent: false,
+        timeout: TIMEOUT_MS,
+        servername: host,
+        headers: { "user-agent": "agentnative-build-probe/1.0 (+https://agentnative.build/agents)", ...init.headers }
+      },
+      (res) => {
+        const chunks = [];
+        let size = 0;
+        res.on("data", (c) => {
+          size += c.length;
+          if (size > MAX_BYTES) {
+            res.destroy();
+            return;
+          }
+          chunks.push(c);
+        });
+        const done = () => resolve({ status: res.statusCode ?? 0, type: String(res.headers["content-type"] ?? ""), text: Buffer.concat(chunks).toString("utf8"), location: res.headers.location });
+        res.on("end", done);
+        res.on("close", done);
+        res.on("error", reject);
+      }
+    );
+    req.on("timeout", () => req.destroy(new Error("timeout")));
+    const deadline = setTimeout(() => req.destroy(new Error("deadline")), DEADLINE_MS);
+    req.on("close", () => clearTimeout(deadline));
+    req.on("error", reject);
+    if (init.body) req.write(init.body);
+    req.end();
+  });
+}
+async function fetchSame(host, path, init = {}) {
+  try {
+    let r = await get(host, path, init);
+    for (let i = 0; i < 2 && [301, 302, 307, 308].includes(r.status) && r.location; i++) {
+      const next = new URL(r.location, `https://${host}${path}`);
+      if (next.protocol !== "https:" || next.hostname !== host) break;
+      r = await get(host, next.pathname + next.search, init);
+    }
+    return r;
+  } catch {
+    return null;
+  }
+}
+var bad = (r) => !r || r.status < 200 || r.status >= 300;
+var INIT = JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "agentnative-probe", version: "1.0.0" } } });
+var isMap = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+function isSpec(text) {
+  try {
+    const j = JSON.parse(text);
+    return /^[23]\.\d+(\.\d+)?$/.test(String(j?.openapi ?? j?.swagger ?? "")) && isMap(j.paths) && Object.keys(j.paths).some((k) => k.startsWith("/"));
+  } catch {
+    return /^(openapi|swagger):\s*["']?[23]\.\d+(\.\d+)?["']?\s*$/m.test(text) && /^paths:\s*\n[ \t]+["']?\/\S*["']?:/m.test(text);
+  }
+}
+function isMcpInit(text) {
+  const body = text.trimStart().startsWith("{") ? text : text.split("\n").find((l) => l.startsWith("data:"))?.slice(5) ?? "";
+  try {
+    const j = JSON.parse(body);
+    return j?.jsonrpc === "2.0" && isMap(j.result) && typeof j.result.protocolVersion === "string" && isMap(j.result.serverInfo) && typeof j.result.serverInfo.name === "string";
+  } catch {
+    return false;
+  }
+}
+function parseTarget(input) {
+  let u;
+  try {
+    u = new URL(/^https?:\/\//i.test(input.trim()) ? input.trim() : "https://" + input.trim());
+  } catch {
+    return { error: "That does not look like a URL." };
+  }
+  if (u.protocol !== "https:") return { error: "Only https:// sites can be probed." };
+  if (u.username || u.password) return { error: "Remove credentials from the URL." };
+  if (u.port && u.port !== "443") return { error: "Only the default HTTPS port can be probed." };
+  const host = u.hostname.toLowerCase();
+  if (net.isIP(host) || host === "localhost" || !host.includes(".") || host.endsWith(".local") || host.endsWith(".internal")) return { error: "Use a public hostname, not an IP address or a local name." };
+  return { host };
+}
+async function probeHost(host) {
+  const [llms, llmsFull, md, ...rest] = await Promise.all([
+    fetchSame(host, "/llms.txt"),
+    fetchSame(host, "/llms-full.txt"),
+    fetchSame(host, "/", { headers: { accept: "text/markdown" } }),
+    ...["/openapi.json", "/openapi.yaml", "/.well-known/openapi.json", "/swagger.json"].map((p) => fetchSame(host, p)),
+    ...["/mcp", "/api/mcp", "/.well-known/mcp"].map((p) => fetchSame(host, p, { method: "POST", headers: { "content-type": "application/json", accept: "application/json, text/event-stream" }, body: INIT })),
+    fetchSame(host, "/api/__agentnative_probe_404", { headers: { accept: "application/json" } })
+  ]);
+  const specs = rest.slice(0, 4), mcps = rest.slice(4, 7), notFound = rest[7];
+  const findings = [];
+  const llmsOk = !bad(llms) && !/html/i.test(llms.type) && /(^#|\]\()/m.test(llms.text);
+  const markdown = !bad(md) && /markdown/i.test(md.type) || !bad(llmsFull) && !/html/i.test(llmsFull.type) && /(^#|\]\()/m.test(llmsFull.text) || llmsOk && /\.md\b/.test(llms.text);
+  findings.push(llmsOk && markdown ? { n: 3, verdict: "yes", evidence: `/llms.txt found (${llms.status}) and Markdown is served (${!bad(md) && /markdown/i.test(md.type) ? "Accept: text/markdown" : !bad(llmsFull) ? "/llms-full.txt" : ".md links"}).` } : llmsOk ? { n: 3, verdict: "unknown", evidence: "/llms.txt found, but no Markdown version of the docs was detected. Confirm that docs load as plain Markdown." } : { n: 3, verdict: "no", evidence: llms ? `/llms.txt returned ${llms.status}${/html/i.test(llms.type) ? " as HTML" : ""}.` : "/llms.txt did not respond." });
+  const specAt = ["/openapi.json", "/openapi.yaml", "/.well-known/openapi.json", "/swagger.json"].find((_, i) => !bad(specs[i]) && isSpec(specs[i].text));
+  const mcpAt = ["/mcp", "/api/mcp", "/.well-known/mcp"].find((_, i) => !bad(mcps[i]) && isMcpInit(mcps[i].text));
+  findings.push(specAt || mcpAt ? { n: 2, verdict: "yes", evidence: [specAt && `OpenAPI at ${specAt}`, mcpAt && `MCP server at ${mcpAt} answers initialize`].filter(Boolean).join("; ") + ". Confirm it covers the main workflows." } : { n: 2, verdict: "unknown", evidence: "No OpenAPI file or MCP server at the standard paths. If one exists elsewhere, answer yes yourself." });
+  let q6 = { n: 6, verdict: "unknown", evidence: "No API error could be sampled from outside. Trigger a real failure and check it has a code, cause, and fix." };
+  if (notFound && notFound.status >= 400) {
+    if (/json/i.test(notFound.type)) {
+      try {
+        const j = JSON.parse(notFound.text);
+        const o = j?.error && typeof j.error === "object" ? j.error : j;
+        const keys = new Set(Object.keys(o && typeof o === "object" ? o : {}).map((k) => k.toLowerCase()));
+        const hasCode = ["code", "type"].some((k) => keys.has(k));
+        const hasFix = ["fix", "hint", "suggestion", "remediation", "how_to_fix"].some((k) => keys.has(k));
+        q6 = hasCode && hasFix ? { n: 6, verdict: "yes", evidence: "A missing API route returned JSON with a code and a suggested fix. Confirm real failures look the same." } : { n: 6, verdict: "unknown", evidence: "A missing API route returned JSON without both a code and a suggested fix." };
+      } catch {
+      }
+    } else q6 = { n: 6, verdict: "unknown", evidence: `A missing API route returned ${notFound.status} as ${/html/i.test(notFound.type) ? "HTML" : "a non-JSON type"}, not JSON. Check your real API routes.` };
+  }
+  findings.push(q6);
+  return findings.sort((a, b) => a.n - b.n);
+}
+var hits = /* @__PURE__ */ new Map();
+function limited(ip, max = 8) {
+  const now = Date.now();
+  const recent = (hits.get(ip) ?? []).filter((t) => now - t < 6e4);
+  recent.push(now);
+  hits.set(ip, recent);
+  if (hits.size > 5e3) hits.clear();
+  return recent.length > max;
+}
+
 // server/mcp.ts
+var probeTool = {
+  name: "probe_site",
+  title: "Probe a public site for agent-native signals",
+  description: "Checks a public https site for llms.txt and Markdown docs, an OpenAPI file or MCP server, and a structured error response. Answers up to three scorecard questions (3, 2, and 6); the rest need source access. Returns one finding per question with a verdict of yes, no, or unknown, and short evidence.",
+  inputSchema: { type: "object", properties: { url: { type: "string", description: "Public https URL or hostname, for example https://example.com" } }, required: ["url"], additionalProperties: false },
+  run: async ({ url }) => {
+    const t = parseTarget(String(url ?? ""));
+    if ("error" in t) throw new ToolError("invalid_url", t.error, "Send a public https:// hostname, for example https://example.com.");
+    if (limited("mcp", 30)) throw new ToolError("rate_limited", "Too many probes right now", "Wait a minute and retry.", true);
+    return { host: t.host, findings: await probeHost(t.host) };
+  }
+};
+var TOOLS2 = [...TOOLS, probeTool];
 var SUPPORTED = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 var MAX_BODY = 64 * 1024;
 var CORS = {
@@ -999,7 +1218,7 @@ var CORS = {
 var reply = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", "cache-control": "no-store", ...CORS } });
 var ok = (id, result) => ({ jsonrpc: "2.0", id, result });
 var fail = (id, code, message, data) => ({ jsonrpc: "2.0", id: id ?? null, error: { code, message, ...data ? { data } : {} } });
-function handle(msg) {
+async function handle(msg) {
   if (!msg || msg.jsonrpc !== "2.0" || typeof msg.method !== "string") return fail(msg?.id, -32600, "Invalid Request");
   const { id, method, params } = msg;
   const isNotification = id === void 0;
@@ -1010,18 +1229,18 @@ function handle(msg) {
         protocolVersion: SUPPORTED.includes(asked) ? asked : SUPPORTED[0],
         capabilities: { tools: { listChanged: false } },
         serverInfo: { name: "agentnative-build", title: SITE.name, version: "1.0.0" },
-        instructions: "Read-only tools about agent-native software. Use score_product to rate a product, search_site to find passages, get_page for full Markdown."
+        instructions: "Read-only tools about agent-native software. Call get_scorecard, inspect the product, then send answers to score_product to rate it; probe_site checks a public site from outside. Use search_site to find passages, get_page for full Markdown."
       });
     }
     case "ping":
       return ok(id, {});
     case "tools/list":
-      return ok(id, { tools: TOOLS.map((t) => ({ name: t.name, title: t.title, description: t.description, inputSchema: t.inputSchema, annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false } })) });
+      return ok(id, { tools: TOOLS2.map((t) => ({ name: t.name, title: t.title, description: t.description, inputSchema: t.inputSchema, annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: t.name === "probe_site" } })) });
     case "tools/call": {
-      const tool = TOOLS.find((t) => t.name === params?.name);
+      const tool = TOOLS2.find((t) => t.name === params?.name);
       if (!tool) return fail(id, -32602, `Unknown tool: ${params?.name}`, { fix: "Call tools/list and use one of the returned names.", retryable: false });
       try {
-        return ok(id, toolResult(tool, params?.arguments));
+        return ok(id, await toolResult(tool, params?.arguments));
       } catch (e) {
         return ok(id, errorResult(e));
       }
@@ -1040,18 +1259,18 @@ async function post(request) {
     return reply(fail(null, -32700, "Parse error"), 400);
   }
   if (Array.isArray(body)) {
-    const out2 = body.map(handle).filter((r) => r !== null);
+    const out2 = (await Promise.all(body.map(handle))).filter((r) => r !== null);
     return out2.length ? reply(out2) : new Response(null, { status: 202, headers: CORS });
   }
-  const out = handle(body);
+  const out = await handle(body);
   return out === null ? new Response(null, { status: 202, headers: CORS }) : reply(out);
 }
-function get() {
+function get2() {
   return reply({
     name: "agentnative-build",
     description: "Read-only MCP server for agentnative.build. POST JSON-RPC 2.0 to this URL.",
     docs: SITE.url + "/agents",
-    tools: TOOLS.map((t) => t.name)
+    tools: TOOLS2.map((t) => t.name)
   });
 }
 function options() {
@@ -1063,7 +1282,7 @@ var mcp_default = {
       case "POST":
         return post(request);
       case "GET":
-        return get();
+        return get2();
       case "OPTIONS":
         return options();
       default:

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "esbuild server/mcp.ts --bundle --format=esm --platform=node --target=node20 --outfile=api/mcp.js --log-level=warning && vite build && vite build --ssr src/entry-server.tsx --outDir dist-server && node scripts/prerender.mjs && node scripts/validate-site.mjs",
+    "build": "esbuild server/mcp.ts --bundle --format=esm --platform=node --target=node20 --outfile=api/mcp.js --log-level=warning && esbuild server/probe.ts --bundle --format=esm --platform=node --target=node20 --outfile=api/probe.js --log-level=warning && vite build && vite build --ssr src/entry-server.tsx --outDir dist-server && node scripts/prerender.mjs && node scripts/validate-site.mjs",
     "preview": "python3 -m http.server 4173 --directory dist"
   },
   "dependencies": {

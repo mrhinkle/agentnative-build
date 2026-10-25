@@ -35,6 +35,8 @@ write("404.html", template
 
 write("llms.txt", ssr.llmsTxt());
 write("llms-full.txt", ssr.llmsFullTxt());
+write("scorecard.json", ssr.scorecardJson());
+write("scorecard.md", ssr.scorecardMd());
 const lastmod = ssr.SITE.modified;
 write("sitemap.xml", `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${ssr.PAGES.map((p) => `  <url><loc>${SITE}${p.path === "/" ? "/" : p.path}</loc><lastmod>${lastmod}</lastmod></url>`).join("\n")}\n</urlset>\n`);
-console.log("[prerender] llms.txt, llms-full.txt, sitemap.xml written");
+console.log("[prerender] llms.txt, llms-full.txt, scorecard.json, scorecard.md, sitemap.xml written");
