@@ -25,14 +25,31 @@ export function readConsent(): Consent | null {
 export const gpc = () => typeof navigator !== "undefined" && navigator.globalPrivacyControl === true;
 
 export function writeConsent(c: Consent) {
-  try { localStorage.setItem(CONSENT_SLOT, c); } catch { /* storage blocked: choice lasts for this page only */ }
+  try { localStorage.setItem(CONSENT_SLOT, c); }
+  catch {
+    // Storage blocked: the choice lasts for this page only. Never leave an older "granted" behind a "denied".
+    if (c === "denied") try { localStorage.removeItem(CONSENT_SLOT); } catch { /* nothing stored we can reach */ }
+  }
   if (c === "granted") loadGa();
-  else window.gtag?.("consent", "update", { analytics_storage: "denied" });
+  else revoke();
+}
+
+/** Stop all GA hits for the rest of the visit, including the cookieless pings Consent Mode still sends when denied. */
+function revoke() {
+  if (!GA_ID || typeof window === "undefined") return;
+  (window as any)[`ga-disable-${GA_ID}`] = true;
+  window.gtag?.("consent", "update", { analytics_storage: "denied" });
 }
 
 let loaded = false;
 export function loadGa() {
-  if (loaded || !GA_ID || typeof window === "undefined") return;
+  if (!GA_ID || typeof window === "undefined") return;
+  (window as any)[`ga-disable-${GA_ID}`] = false;
+  if (loaded) {
+    // Allowed again after a "No thanks" on this page: the tag is already here, so just lift the denial.
+    window.gtag?.("consent", "update", { analytics_storage: "granted" });
+    return;
+  }
   loaded = true;
   window.dataLayer = window.dataLayer || [];
   window.gtag = function gtag() { window.dataLayer!.push(arguments); };
