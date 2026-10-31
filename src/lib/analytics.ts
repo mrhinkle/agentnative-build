@@ -38,19 +38,11 @@ export function loadGa() {
   window.gtag = function gtag() { window.dataLayer!.push(arguments); };
   window.gtag("consent", "default", { analytics_storage: "granted", ad_storage: "denied", ad_user_data: "denied", ad_personalization: "denied" });
   window.gtag("js", new Date());
-  window.gtag("config", GA_ID, { send_page_view: false });
+  // The config call sends the first page_view; later SPA route changes are counted by GA4 enhanced measurement
+  // ("page changes based on browser history events", on by default), so there is no manual page_view here.
+  window.gtag("config", GA_ID);
   const s = document.createElement("script");
   s.async = true;
   s.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(GA_ID)}`;
   document.head.appendChild(s);
-  trackPageView(location.pathname + location.search);
-}
-
-/** SPA page view. A no-op until consent has loaded gtag; repeats for the same path are dropped, since the
- *  banner (child effect) and the layout (parent effect) both report the first page when consent is already stored. */
-let lastPath = "";
-export function trackPageView(path: string) {
-  if (!loaded || path === lastPath) return;
-  lastPath = path;
-  window.gtag?.("event", "page_view", { page_path: path, page_location: location.origin + path, page_title: document.title });
 }

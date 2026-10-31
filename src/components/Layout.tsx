@@ -6,7 +6,6 @@ import { metaFor } from "@/lib/seo";
 import ReaderView from "@/components/ReaderView";
 import { registerWebMcp } from "@/lib/webmcp";
 import ConsentBanner, { ConsentLink } from "@/components/ConsentBanner";
-import { trackPageView } from "@/lib/analytics";
 
 const PRIMARY = [
   { label: "Guide", href: "/" },
@@ -27,7 +26,7 @@ function useRouteMeta(path: string) {
 }
 
 export default function Layout({ children }: { children: ReactNode }) {
-  const { pathname, search, hash } = useLocation();
+  const { pathname, hash } = useLocation();
   const [agent, setAgent] = useState(false);
   const [sweep, setSweep] = useState(0);
   const [menu, setMenu] = useState(false);
@@ -63,8 +62,6 @@ export default function Layout({ children }: { children: ReactNode }) {
   useEffect(() => setMenu(false), [pathname]);
 
   // GA4 page view per route; a no-op unless the reader allowed analytics.
-  useEffect(() => trackPageView(pathname + search), [pathname, search]);
-
   return (
     <div className="min-h-screen">
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:rounded focus:bg-[#2563EB] focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white">Skip to content</a>
