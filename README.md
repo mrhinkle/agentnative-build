@@ -34,6 +34,10 @@ pnpm dev        # Vite dev server
 pnpm build      # bundle the MCP function, build, prerender, validate
 ```
 
+## Analytics
+
+Google Analytics 4 loads only after a reader clicks **Allow** in the consent banner (`src/components/ConsentBanner.tsx`, logic in `src/lib/analytics.ts`, copy in `CONSENT` in `src/lib/data.ts`). The Measurement ID comes from the `VITE_GA_MEASUREMENT_ID` env var at build time; when it is unset there is no banner and no analytics. A Global Privacy Control signal is treated as a standing no. Nothing from Google is in the prerendered HTML. GA4 property "Agent Native" (`properties/561718460`, `G-H5ZW8G8506`). The `config` call sends the first page view; later route changes are counted by GA4 enhanced measurement (browser history events), so keep that setting on in the stream.
+
 ## Adding or changing a page
 
 1. Edit `src/lib/data.ts`: add a `PageMeta`, its blocks, and its FAQ.

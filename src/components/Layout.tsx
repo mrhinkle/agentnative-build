@@ -5,6 +5,7 @@ import { AIOS_COMPANION, NAV_ITEMS, SITE } from "@/lib/data";
 import { metaFor } from "@/lib/seo";
 import ReaderView from "@/components/ReaderView";
 import { registerWebMcp } from "@/lib/webmcp";
+import ConsentBanner, { ConsentLink } from "@/components/ConsentBanner";
 
 const PRIMARY = [
   { label: "Guide", href: "/" },
@@ -60,6 +61,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
   useEffect(() => setMenu(false), [pathname]);
 
+  // GA4 page view per route; a no-op unless the reader allowed analytics.
   return (
     <div className="min-h-screen">
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:rounded focus:bg-[#2563EB] focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white">Skip to content</a>
@@ -131,9 +133,13 @@ export default function Layout({ children }: { children: ReactNode }) {
           </div>
         </div>
         <div className="border-t border-white/5">
-          <p className="container py-5 text-xs text-white/50">© 2026 {SITE.author}, {SITE.network.name}. Built for agent readers: every page is generated from one data file into HTML, Markdown, and JSON-LD.</p>
+          <div className="container flex flex-wrap items-center justify-between gap-3 py-5 text-xs text-white/50">
+            <p>© 2026 {SITE.author}, {SITE.network.name}. Built for agent readers: every page is generated from one data file into HTML, Markdown, and JSON-LD.</p>
+            <ConsentLink className="underline decoration-white/30 hover:text-white hover:decoration-white transition-colors" />
+          </div>
         </div>
       </footer>
+      <ConsentBanner />
     </div>
   );
 }

@@ -17,6 +17,14 @@ export const SITE = {
   network: { name: "The AIE Network", url: "https://theaie.net" },
 };
 
+export const CONSENT = {
+  title: "Analytics, only if you say yes",
+  body: "We'd like to use Google Analytics to count visits and see which pages help. It sets cookies, so it stays off unless you allow it. No ads, no selling data. Agents and readers who decline see the same site.",
+  accept: "Allow",
+  decline: "No thanks",
+  link: "Cookie preferences",
+};
+
 export const AIOS_COMPANION = {
   operatingModel: "https://aios-site-pink.vercel.app/the-operating-model",
   bookAppendix: "https://aios-site-pink.vercel.app/book#agent-native-scorecard",
