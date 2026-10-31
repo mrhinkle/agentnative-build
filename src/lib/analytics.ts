@@ -46,8 +46,11 @@ export function loadGa() {
   trackPageView(location.pathname + location.search);
 }
 
-/** SPA page view. A no-op until consent has loaded gtag. */
+/** SPA page view. A no-op until consent has loaded gtag; repeats for the same path are dropped, since the
+ *  banner (child effect) and the layout (parent effect) both report the first page when consent is already stored. */
+let lastPath = "";
 export function trackPageView(path: string) {
-  if (!loaded) return;
+  if (!loaded || path === lastPath) return;
+  lastPath = path;
   window.gtag?.("event", "page_view", { page_path: path, page_location: location.origin + path, page_title: document.title });
 }
